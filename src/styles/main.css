@@ -408,6 +408,11 @@
             animation: tutorial-focus-pulse 1.15s infinite ease-in-out;
         }
 
+        .tutorial-top-card {
+            width: min(100%, 22rem);
+            margin-inline: auto;
+        }
+
         /* Gold gradient styling */
         .gold-coin-badge {
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);

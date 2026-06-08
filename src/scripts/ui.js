@@ -114,11 +114,13 @@ export function createUiHelpers({
 
     function setZooWelcomeVisibility(showWelcome) {
         const welcomePanel = document.getElementById('zoo-welcome-panel');
+        const welcomeScrim = document.getElementById('zoo-welcome-scrim');
         const habitatContent = document.getElementById('zoo-habitat-content');
         if (!welcomePanel || !habitatContent) return;
 
         welcomePanel.classList.toggle('hidden', !showWelcome);
-        habitatContent.classList.toggle('hidden', showWelcome);
+        if (welcomeScrim) welcomeScrim.classList.toggle('hidden', !showWelcome);
+        habitatContent.classList.remove('hidden');
     }
 
     function renderChecklistHUD() {
