@@ -15,7 +15,6 @@ export function createTutorialHelpers({
     let activeTutorialMode = null;
     let gameFtueStep = 0;
     let gameFtueTargets = { clue: null, mark: null, place: null };
-    const tutorialDialogBaseClass = 'tutorial-top-card rounded-3xl p-5 border-4 shadow-2xl flex flex-col space-y-3 pointer-events-auto transition-all duration-300';
 
     function clearTutorialHighlights() {
         document.querySelectorAll('.tutorial-highlighted').forEach(element => {
@@ -60,14 +59,6 @@ export function createTutorialHelpers({
         }
 
         title.innerText = titleText;
-    }
-
-    function applyTutorialDialogWindow(mode) {
-        const windowEl = document.getElementById('tutorial-dialogue-window');
-        if (!windowEl) return;
-
-        const accentClass = mode === 'game' ? 'border-emerald-400 bg-white/98' : 'border-amber-400 bg-white';
-        windowEl.className = `${tutorialDialogBaseClass} ${accentClass}`;
     }
 
     function positionTutorialHandForCell(cellId, placement = 'below') {
@@ -164,7 +155,8 @@ export function createTutorialHelpers({
 
         clearTutorialHighlights();
         setTutorialHeader('game', gameFtueStep === 1 ? 'Welcome to Zoodoku' : 'Puzzle Basics');
-        applyTutorialDialogWindow('game');
+        const gameWindowOffsetClass = gameFtueStep === 3 || gameFtueStep === 4 ? 'mb-[18vh]' : 'mb-[24vh]';
+        windowEl.className = `mx-6 ${gameWindowOffsetClass} bg-white rounded-3xl p-5 border-4 border-emerald-400 shadow-2xl flex flex-col space-y-3 pointer-events-auto transition-all duration-300 z-[60]`;
 
         if (gameFtueStep === 1) {
             text.innerHTML = 'Welcome to <strong>Zoodoku</strong>. Every puzzle hides one animal in each row, each column, and each colored habitat zone.';
@@ -316,12 +308,12 @@ export function createTutorialHelpers({
 
         clearTutorialHighlights();
         setTutorialHeader('zoo', 'Zoo Guide');
-        applyTutorialDialogWindow('zoo');
 
         if (state.tutorialStep === 1) {
             text.innerHTML = `This is your Zoo Park! Tap the <strong>🌟 Fav</strong> button on the <strong>${getAnimalName(favoriteTutorialAnimalId)} card</strong>. This boosts its chance of appearing in levels with matching environments.`;
             stepInd.innerText = 'Step 1/3';
             dismissBtn.classList.add('hidden');
+            windowEl.className = 'm-6 bg-white rounded-3xl p-5 border-4 border-amber-400 shadow-2xl flex flex-col space-y-3 pointer-events-auto transition-all duration-300 transform translate-y-2 z-[80]';
 
             const favoriteTutorialCard = document.getElementById(`animal-card-${favoriteTutorialAnimalId}`);
             if (favoriteTutorialCard) {
@@ -333,6 +325,7 @@ export function createTutorialHelpers({
             text.innerHTML = `Perfect choice! Now click <strong>🔼 Level Up</strong> on your <strong>${getAnimalName(upgradeTutorialAnimalId)} card</strong>. To finish this tutorial, that first upgrade is <strong>FREE</strong>.`;
             stepInd.innerText = 'Step 2/3';
             dismissBtn.classList.add('hidden');
+            windowEl.className = 'm-6 bg-white rounded-3xl p-5 border-4 border-amber-400 shadow-2xl flex flex-col space-y-3 pointer-events-auto transition-all duration-300 transform -translate-y-96 z-[80]';
 
             const upgradeTutorialCard = document.getElementById(`animal-card-${upgradeTutorialAnimalId}`);
             if (upgradeTutorialCard) {
@@ -344,6 +337,7 @@ export function createTutorialHelpers({
             text.innerHTML = 'Unlock more animals by solving logic puzzles. Have fun building your dream animal park, Ranger!';
             stepInd.innerText = 'Step 3/3';
             dismissBtn.classList.remove('hidden');
+            windowEl.className = 'm-6 bg-white rounded-3xl p-5 border-4 border-amber-400 shadow-2xl flex flex-col space-y-3 pointer-events-auto z-[80]';
         }
     }
 
