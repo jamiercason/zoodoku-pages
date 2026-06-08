@@ -1,3 +1,6 @@
+const ANIMAL_SHARD_GROWTH_RATE = 1.18;
+const ANIMAL_COIN_GROWTH_RATE = 1.16;
+
 export function solveBoard(gridSize, colorMap) {
     const solutions = [];
     const placed = [];
@@ -41,6 +44,57 @@ export function calculateTotalPower(animals, unlockedCompanionIds) {
         if (!unlockedCompanionIds.includes(animal.id)) return total;
         return total + (animal.level * animal.powerMultiplier);
     }, 0);
+}
+
+export function getAnimalCollectedShards(animal) {
+    return Math.max(0, Math.floor(animal?.shardsCollected || 0));
+}
+
+export function getAnimalShardRequirementForUpgrade(animal, level = animal?.level || 1) {
+    const baseRequirement = Math.max(1, Math.floor(animal?.requiredShards || 1));
+    const normalizedLevel = Math.max(1, Math.floor(level || 1));
+    return Math.ceil(baseRequirement * Math.pow(ANIMAL_SHARD_GROWTH_RATE, normalizedLevel - 1));
+}
+
+export function getAnimalTotalShardsRequiredForLevel(animal, level = animal?.level || 1) {
+    const normalizedLevel = Math.max(1, Math.floor(level || 1));
+    let totalRequired = 0;
+
+    for (let currentLevel = 1; currentLevel < normalizedLevel; currentLevel++) {
+        totalRequired += getAnimalShardRequirementForUpgrade(animal, currentLevel);
+    }
+
+    return totalRequired;
+}
+
+export function getAnimalShardProgress(animal) {
+    const currentLevel = Math.max(1, Math.floor(animal?.level || 1));
+    const collectedShards = getAnimalCollectedShards(animal);
+    const currentLevelFloor = getAnimalTotalShardsRequiredForLevel(animal, currentLevel);
+    const nextLevelRequirement = getAnimalTotalShardsRequiredForLevel(animal, currentLevel + 1);
+    const progressRange = Math.max(1, nextLevelRequirement - currentLevelFloor);
+    const progressWithinLevel = Math.min(Math.max(collectedShards - currentLevelFloor, 0), progressRange);
+
+    return {
+        collectedShards,
+        currentLevelFloor,
+        nextLevelRequirement,
+        progressRatio: progressWithinLevel / progressRange,
+        remainingShards: Math.max(0, nextLevelRequirement - collectedShards)
+    };
+}
+
+export function getAnimalUpgradeCoinCost(animal) {
+    const currentLevel = Math.max(1, Math.floor(animal?.level || 1));
+    const baseCost = Math.max(50, Math.floor((animal?.requiredShards || 1) * 10));
+    return Math.ceil((baseCost * Math.pow(ANIMAL_COIN_GROWTH_RATE, currentLevel - 1)) / 10) * 10;
+}
+
+export function canUpgradeAnimal(animal, coins, options = {}) {
+    if (options.tutorialFree) return true;
+
+    const progress = getAnimalShardProgress(animal);
+    return progress.collectedShards >= progress.nextLevelRequirement && coins >= getAnimalUpgradeCoinCost(animal);
 }
 
 export function computeProgressionForLevel(levelNumber, initialAnimals, starterAnimalId) {

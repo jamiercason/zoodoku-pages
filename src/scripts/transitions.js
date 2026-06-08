@@ -2,6 +2,10 @@ export function createTransitionHelpers({
     state,
     favoriteTutorialAnimalId,
     upgradeTutorialAnimalId,
+    canUpgradeAnimal,
+    getAnimalCollectedShards,
+    getAnimalShardProgress,
+    getAnimalUpgradeCoinCost,
     initialAnimals,
     starterAnimalId,
     cloneInitialAnimals,
@@ -25,7 +29,8 @@ export function createTransitionHelpers({
     playSound,
     showFloatAlert,
     animalHeadMarkup,
-    advanceZooTutorial
+    advanceZooTutorial,
+    refreshZooTutorial
 }) {
     function finishZooWelcome() {
         state.zooWelcomeSeen = true;
@@ -108,7 +113,7 @@ export function createTransitionHelpers({
         const tabBtnHome = document.getElementById('tab-btn-home');
 
         [tabBtnPuzzle, tabBtnZoo, tabBtnHome].forEach(btn => {
-            if (btn) btn.className = "flex flex-col items-center space-y-1 text-slate-400 transition duration-200";
+            if (btn) btn.className = "flex flex-col items-center space-y-1 text-slate-400 transition duration-200 group";
         });
         syncHomeUnlockUI();
         syncZooUnlockUI();
@@ -212,7 +217,7 @@ export function createTransitionHelpers({
         const ownedAnimals = state.animals.filter(animal => state.unlockedCompanionIds.includes(animal.id));
         const randomOwned = ownedAnimals[Math.floor(Math.random() * ownedAnimals.length)];
         const shardBonus = 5;
-        randomOwned.shards += shardBonus;
+        randomOwned.shardsCollected = getAnimalCollectedShards(randomOwned) + shardBonus;
 
         document.getElementById('chest-reward-shards-art').innerHTML = animalHeadMarkup(randomOwned, 'animal-head--sm');
         document.getElementById('chest-reward-shards-text').innerText = `+${shardBonus}`;
@@ -228,6 +233,7 @@ export function createTransitionHelpers({
         }
 
         saveState();
+        renderZooHabitat();
         updateHUD();
     }
 
@@ -259,14 +265,38 @@ export function createTransitionHelpers({
     }
 
     function toggleFavoriteMascot(animalId) {
+        if (!state.tutorialComplete && state.tutorialStep === 1 && animalId !== favoriteTutorialAnimalId) {
+            showFloatAlert(`Tap ${getAnimalName(favoriteTutorialAnimalId)}'s Fav button to continue.`);
+            playSound('error');
+            return;
+        }
+
+        if (!state.tutorialComplete && state.tutorialStep === 2) {
+            showFloatAlert(`Level up ${getAnimalName(upgradeTutorialAnimalId)} to continue.`);
+            playSound('error');
+            return;
+        }
+
         state.favoriteMascot = animalId;
+        const completedFavoriteTutorial = !state.tutorialComplete && state.tutorialStep === 1 && animalId === favoriteTutorialAnimalId;
+        if (completedFavoriteTutorial) {
+            const tutorialUpgradeAnimal = state.animals.find(entry => entry.id === upgradeTutorialAnimalId);
+            if (tutorialUpgradeAnimal) {
+                const tutorialProgress = getAnimalShardProgress(tutorialUpgradeAnimal);
+                tutorialUpgradeAnimal.shardsCollected = Math.max(
+                    getAnimalCollectedShards(tutorialUpgradeAnimal),
+                    tutorialProgress.nextLevelRequirement
+                );
+            }
+            advanceZooTutorial();
+        }
+
         updateHUD();
         renderZooHabitat();
         renderHomeScreen();
         saveState();
-
-        if (!state.tutorialComplete && state.tutorialStep === 1 && animalId === favoriteTutorialAnimalId) {
-            advanceZooTutorial();
+        if (completedFavoriteTutorial) {
+            refreshZooTutorial?.();
         }
     }
 
@@ -274,28 +304,56 @@ export function createTransitionHelpers({
         const animal = state.animals.find(entry => entry.id === animalId);
         if (!animal || !state.unlockedCompanionIds.includes(animalId)) return;
 
+        if (!state.tutorialComplete && state.tutorialStep === 1) {
+            showFloatAlert(`Tap ${getAnimalName(favoriteTutorialAnimalId)}'s Fav button to continue.`);
+            playSound('error');
+            return;
+        }
+
+        if (!state.tutorialComplete && state.tutorialStep === 2 && animalId !== upgradeTutorialAnimalId) {
+            showFloatAlert(`Level up ${getAnimalName(upgradeTutorialAnimalId)} to continue.`);
+            playSound('error');
+            return;
+        }
+
         const tutorialFreeUpgrade = !state.tutorialComplete && state.tutorialStep === 2 && animalId === upgradeTutorialAnimalId;
-        if (!tutorialFreeUpgrade && animal.shards < animal.requiredShards) {
-            showFloatAlert(`Need ${animal.requiredShards - animal.shards} more shards`);
+        const shardProgress = getAnimalShardProgress(animal);
+        const upgradeCoinCost = getAnimalUpgradeCoinCost(animal);
+        if (!tutorialFreeUpgrade && shardProgress.collectedShards < shardProgress.nextLevelRequirement) {
+            showFloatAlert(`Need ${shardProgress.remainingShards} more shards`);
+            playSound('error');
+            return;
+        }
+
+        if (!tutorialFreeUpgrade && state.coins < upgradeCoinCost) {
+            showFloatAlert(`Need ${upgradeCoinCost - state.coins} more coins`);
+            playSound('error');
+            return;
+        }
+
+        if (!canUpgradeAnimal(animal, state.coins, { tutorialFree: tutorialFreeUpgrade })) {
             playSound('error');
             return;
         }
 
         if (!tutorialFreeUpgrade) {
-            animal.shards -= animal.requiredShards;
+            state.coins -= upgradeCoinCost;
         }
 
         animal.level += 1;
-        animal.requiredShards = Math.ceil(animal.requiredShards * 1.35);
 
         playSound('levelup');
+        const completedTutorialUpgrade = !state.tutorialComplete && state.tutorialStep === 2 && animalId === upgradeTutorialAnimalId;
+        if (completedTutorialUpgrade) {
+            advanceZooTutorial();
+        }
+
         updateHUD();
         renderZooHabitat();
         renderHomeScreen();
         saveState();
-
-        if (!state.tutorialComplete && state.tutorialStep === 2 && animalId === upgradeTutorialAnimalId) {
-            advanceZooTutorial();
+        if (completedTutorialUpgrade) {
+            refreshZooTutorial?.();
         }
     }
 

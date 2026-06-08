@@ -368,6 +368,65 @@
             filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.18));
         }
 
+        .nav-tab-label {
+            font-size: 0.66rem;
+            font-weight: 900;
+            letter-spacing: 0.16em;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+
+        .nav-tab-lock {
+            font-size: 0.56rem;
+            letter-spacing: 0;
+        }
+
+        #tab-btn-puzzle {
+            transform: translateY(-0.45rem);
+        }
+
+        #tab-play-cta {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 30% 28%, rgba(255, 247, 214, 0.96) 0%, rgba(255, 247, 214, 0) 24%),
+                linear-gradient(145deg, #f7d27a 0%, #e0ab43 42%, #f5d383 68%, #bb7920 100%);
+            box-shadow:
+                0 14px 24px rgba(166, 106, 14, 0.28),
+                inset 0 2px 3px rgba(255, 249, 229, 0.95),
+                inset 0 -4px 7px rgba(161, 96, 10, 0.3);
+            border: 2px solid rgba(255, 244, 210, 0.95);
+        }
+
+        #tab-play-cta-inner {
+            background:
+                radial-gradient(circle at 34% 30%, rgba(255, 246, 213, 0.94) 0%, rgba(255, 246, 213, 0) 28%),
+                linear-gradient(135deg, #d1902f 0%, #f5cb72 52%, #b8741b 100%);
+            box-shadow:
+                inset 0 2px 3px rgba(255, 243, 204, 0.72),
+                inset 0 -3px 5px rgba(138, 82, 13, 0.28);
+        }
+
+        #tab-play-cta::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.44), transparent 58%);
+            pointer-events: none;
+        }
+
+        #tab-play-triangle {
+            width: 0;
+            height: 0;
+            margin-left: 0.28rem;
+            border-top: 0.88rem solid transparent;
+            border-bottom: 0.88rem solid transparent;
+            border-left: 1.42rem solid #8a530f;
+            filter:
+                drop-shadow(0 1px 0 rgba(255, 241, 208, 0.6))
+                drop-shadow(0 4px 5px rgba(117, 70, 10, 0.22));
+        }
+
         @keyframes zoo-badge-growl {
             0%, 100% { transform: scale(1); }
             25% { transform: scale(1.08) rotate(-3deg); }
@@ -406,6 +465,18 @@
             outline-offset: -4px;
             box-shadow: 0 18px 34px rgba(15, 23, 42, 0.18);
             animation: tutorial-focus-pulse 1.15s infinite ease-in-out;
+        }
+
+        .tutorial-spotlight-card {
+            position: relative;
+            z-index: 70;
+            box-shadow: 0 24px 42px rgba(15, 23, 42, 0.22);
+            isolation: isolate;
+        }
+
+        .tutorial-top-card {
+            width: min(100%, 22rem);
+            margin-inline: auto;
         }
 
         /* Gold gradient styling */

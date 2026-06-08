@@ -23,6 +23,18 @@ export const state = {
     tutorialStep: 0
 };
 
+function getLegacyCollectedShardEstimate(savedAnimal, defaultAnimal) {
+    const savedLevel = Math.max(1, Math.floor(savedAnimal?.level ?? defaultAnimal.level ?? 1));
+    const legacyShards = Math.max(0, Math.floor(savedAnimal?.shards ?? 0));
+    let collectedTotal = legacyShards;
+
+    for (let level = 1; level < savedLevel; level++) {
+        collectedTotal += Math.ceil(defaultAnimal.requiredShards * Math.pow(1.35, level - 1));
+    }
+
+    return collectedTotal;
+}
+
 export function mergeAnimalProgress(savedAnimals = []) {
     const savedById = new Map(savedAnimals.map(animal => [animal.id, animal]));
     return initialAnimals.map(defaultAnimal => {
@@ -32,8 +44,7 @@ export function mergeAnimalProgress(savedAnimals = []) {
         return {
             ...defaultAnimal,
             level: saved.level ?? defaultAnimal.level,
-            shards: saved.shards ?? defaultAnimal.shards,
-            requiredShards: saved.requiredShards ?? defaultAnimal.requiredShards
+            shardsCollected: saved.shardsCollected ?? getLegacyCollectedShardEstimate(saved, defaultAnimal)
         };
     });
 }

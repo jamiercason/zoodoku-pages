@@ -2,6 +2,10 @@ export function createUiHelpers({
     state,
     favoriteTutorialAnimalId,
     upgradeTutorialAnimalId,
+    canUpgradeAnimal,
+    getAnimalCollectedShards,
+    getAnimalShardProgress,
+    getAnimalUpgradeCoinCost,
     getActiveLevelData,
     getAvailableZooUpgradeCount,
     getLevelRevealUses,
@@ -29,7 +33,7 @@ export function createUiHelpers({
             homeBtn.classList.remove('opacity-40', 'pointer-events-none');
             homeLockBadge.classList.add('hidden');
         } else {
-            homeBtn.className = "flex flex-col items-center space-y-1 text-slate-400 transition duration-200 opacity-40 pointer-events-none";
+            homeBtn.className = "flex flex-col items-center space-y-1 text-slate-400 transition duration-200 group opacity-40 pointer-events-none";
             homeLockBadge.classList.remove('hidden');
         }
     }
@@ -47,7 +51,7 @@ export function createUiHelpers({
 
         if (state.zooUnlocked) {
             tabBtnZoo.className = "flex flex-col items-center space-y-1 text-slate-400 transition duration-200 group hover:text-emerald-500 cursor-pointer";
-            zooLabel.innerHTML = "My Zoo";
+            zooLabel.innerHTML = "MY ZOO";
 
             mascotBtn.className = "w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center shadow-md border-2 border-yellow-300 hover:scale-105 active:scale-95 transition-transform";
             mascotBtn.classList.remove('opacity-50', 'pointer-events-none');
@@ -58,8 +62,8 @@ export function createUiHelpers({
             zooUpgradeBadge.classList.toggle('zoo-upgrade-growl', upgradeCount > 0);
             zooUpgradeBadge.innerText = String(upgradeCount);
         } else {
-            tabBtnZoo.className = "flex flex-col items-center space-y-1 text-slate-400 transition duration-200 opacity-40 pointer-events-none cursor-not-allowed";
-            zooLabel.innerHTML = "My Zoo <span class=\"ml-1 text-[9px]\">🔒</span>";
+            tabBtnZoo.className = "flex flex-col items-center space-y-1 text-slate-400 transition duration-200 group opacity-40 pointer-events-none cursor-not-allowed";
+            zooLabel.innerHTML = "MY ZOO <span class=\"ml-1 nav-tab-lock\">🔒</span>";
 
             mascotBtn.className = "w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shadow-md border-2 border-slate-300 pointer-events-none opacity-50";
             zooPowerHud.classList.add('opacity-50');
@@ -114,11 +118,13 @@ export function createUiHelpers({
 
     function setZooWelcomeVisibility(showWelcome) {
         const welcomePanel = document.getElementById('zoo-welcome-panel');
+        const welcomeScrim = document.getElementById('zoo-welcome-scrim');
         const habitatContent = document.getElementById('zoo-habitat-content');
         if (!welcomePanel || !habitatContent) return;
 
         welcomePanel.classList.toggle('hidden', !showWelcome);
-        habitatContent.classList.toggle('hidden', showWelcome);
+        if (welcomeScrim) welcomeScrim.classList.toggle('hidden', !showWelcome);
+        habitatContent.classList.remove('hidden');
     }
 
     function renderChecklistHUD() {
@@ -210,6 +216,8 @@ export function createUiHelpers({
         if (animalTotal && activeLevelData.gridSize) {
             animalTotal.innerText = String(activeLevelData.gridSize);
         }
+
+        syncZooUnlockUI();
     }
 
     function renderProgressionAnimalStage(solvedAnimals) {
@@ -555,20 +563,28 @@ export function createUiHelpers({
             card.className = `relative rounded-2xl border p-3 shadow-sm ${isUnlocked ? 'bg-white border-emerald-100' : 'bg-slate-100 border-slate-200 opacity-75'}`;
 
             const favoriteHand = animal.id === favoriteTutorialAnimalId
-                ? '<div id="hand-favorite-tutorial" class="onboarding-hand hidden absolute -top-5 left-1/2 -translate-x-1/2 text-xl pointing-finger">👇</div>'
+                ? '<div id="hand-favorite-tutorial" class="onboarding-hand hidden pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 text-xl pointing-finger">👇</div>'
                 : '';
             const upgradeHand = animal.id === upgradeTutorialAnimalId
-                ? '<div id="hand-upgrade-tutorial" class="onboarding-hand hidden absolute -bottom-4 right-3 text-xl pointing-finger">👆</div>'
+                ? '<div id="hand-upgrade-tutorial" class="onboarding-hand hidden pointer-events-none absolute -bottom-4 right-3 text-xl pointing-finger">👆</div>'
                 : '';
 
             if (isUnlocked) {
-                const upgradeLabel = !state.tutorialComplete && state.tutorialStep === 2 && animal.id === upgradeTutorialAnimalId
-                    ? 'FREE'
-                    : `${animal.shards}/${animal.requiredShards}`;
+                const isTutorialFreeUpgrade = !state.tutorialComplete && state.tutorialStep === 2 && animal.id === upgradeTutorialAnimalId;
+                const shardProgress = getAnimalShardProgress(animal);
+                const collectedShards = getAnimalCollectedShards(animal);
+                const upgradeCoinCost = getAnimalUpgradeCoinCost(animal);
+                const canUpgrade = canUpgradeAnimal(animal, state.coins, { tutorialFree: isTutorialFreeUpgrade });
+                const upgradePriceLabel = isTutorialFreeUpgrade ? 'FREE' : `${upgradeCoinCost} coins`;
+                const progressPercent = Math.round(shardProgress.progressRatio * 100);
+                const upgradeButtonClass = canUpgrade
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                    : 'bg-emerald-100/80 text-emerald-800 opacity-60';
+                const upgradeButtonIcon = canUpgrade ? '🔼' : '🔒';
 
                 card.innerHTML = `
                     ${animal.id === upgradeTutorialAnimalId ? upgradeHand : ''}
-                    <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-start justify-between gap-3">
                         <div>
                             ${animalHeadMarkup(animal, 'animal-head--lg', 'animal-head--card')}
                             <h4 class="mt-1 font-black text-slate-800">${animal.name}</h4>
@@ -579,14 +595,25 @@ export function createUiHelpers({
                             <div class="text-xs font-bold text-emerald-600">${animal.level * animal.powerMultiplier} power</div>
                         </div>
                     </div>
-                    <div class="mt-3 space-y-2">
-                        <div class="text-[10px] text-slate-500">Shards: <span class="font-bold text-slate-700">${animal.shards}</span></div>
+                    <div class="mt-3 space-y-2.5">
+                        <div class="overflow-hidden rounded-full bg-emerald-100/80 ring-1 ring-emerald-200">
+                            <div class="h-2.5 rounded-full bg-gradient-to-r from-amber-300 via-emerald-400 to-teal-500 transition-all duration-500" style="width:${progressPercent}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] text-slate-500">
+                            <span>Collected shards</span>
+                            <span class="font-bold text-slate-700">${collectedShards}/${shardProgress.nextLevelRequirement}</span>
+                        </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div class="relative">
                                 ${animal.id === favoriteTutorialAnimalId ? favoriteHand : ''}
                                 <button data-action="favorite-mascot" data-animal-id="${animal.id}" class="w-full rounded-xl px-2 py-2 text-[10px] font-bold ${isFavorite ? 'bg-amber-400 text-slate-900' : 'bg-amber-50 text-amber-700 border border-amber-200'}">🌟 Fav</button>
                             </div>
-                            <button data-action="upgrade-animal" data-animal-id="${animal.id}" class="rounded-xl px-2 py-2 text-[10px] font-bold bg-emerald-500 text-white">🔼 ${upgradeLabel}</button>
+                            <button data-action="upgrade-animal" data-animal-id="${animal.id}" class="rounded-xl px-2 py-2 text-[10px] font-bold transition ${upgradeButtonClass}" ${canUpgrade ? '' : 'disabled'}>
+                                <span class="flex items-center justify-center gap-1">
+                                    <span>${upgradeButtonIcon}</span>
+                                    <span>${upgradePriceLabel}</span>
+                                </span>
+                            </button>
                         </div>
                     </div>
                 `;

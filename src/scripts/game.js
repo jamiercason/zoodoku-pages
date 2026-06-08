@@ -12,8 +12,12 @@ import {
 } from "./data.js";
 import {
     calculateTotalPower,
+    canUpgradeAnimal,
     computeProgressionForLevel,
     generateEnvironmentalZoneAssignments,
+    getAnimalCollectedShards,
+    getAnimalShardProgress,
+    getAnimalUpgradeCoinCost,
     getLevelDifficulty,
     getSolvedAnimalSummary,
     selectLevelLayout,
@@ -190,7 +194,9 @@ function getMarkerInkColor(bgColor) {
 function getAvailableZooUpgradeCount() {
     return state.animals.filter(animal => (
         state.unlockedCompanionIds.includes(animal.id) &&
-        animal.shards >= animal.requiredShards
+        canUpgradeAnimal(animal, state.coins, {
+            tutorialFree: !state.tutorialComplete && state.tutorialStep === 2 && animal.id === UPGRADE_TUTORIAL_ANIMAL_ID
+        })
     )).length;
 }
 
@@ -243,6 +249,10 @@ const {
     state,
     favoriteTutorialAnimalId: FAVORITE_TUTORIAL_ANIMAL_ID,
     upgradeTutorialAnimalId: UPGRADE_TUTORIAL_ANIMAL_ID,
+    canUpgradeAnimal,
+    getAnimalCollectedShards,
+    getAnimalShardProgress,
+    getAnimalUpgradeCoinCost,
     getActiveLevelData,
     getAvailableZooUpgradeCount,
     getLevelRevealUses,
@@ -264,6 +274,7 @@ const {
     handleGameFtueDragMark,
     handleGameFtueTap,
     onTutorialPrimaryAction,
+    positionCoachmark,
     resetTutorialState,
     startGameFtue,
     startGuidedTutorial
@@ -336,6 +347,10 @@ transitionHelpers = createTransitionHelpers({
     state,
     favoriteTutorialAnimalId: FAVORITE_TUTORIAL_ANIMAL_ID,
     upgradeTutorialAnimalId: UPGRADE_TUTORIAL_ANIMAL_ID,
+    canUpgradeAnimal,
+    getAnimalCollectedShards,
+    getAnimalShardProgress,
+    getAnimalUpgradeCoinCost,
     initialAnimals,
     starterAnimalId: STARTER_ANIMAL_ID,
     cloneInitialAnimals,
@@ -359,7 +374,8 @@ transitionHelpers = createTransitionHelpers({
     playSound,
     showFloatAlert,
     animalHeadMarkup,
-    advanceZooTutorial
+    advanceZooTutorial,
+    refreshZooTutorial: () => positionCoachmark()
 });
 
 const {
@@ -404,17 +420,20 @@ gridSetupHelpers = createGridSetupHelpers({
 
 // ----------------- ECONOMY & PROGRESSION SYSTEM -----------------
 function levelComplete(finalAnimals) {
-    state.coins += 50;
+    const solvedAnimalSummary = getSolvedAnimalSummary(finalAnimals, state.levelZoneAssignments, state.animals, initialAnimals);
+    solvedAnimalSummary.forEach(({ animal, count }) => {
+        if (!animal) return;
+        animal.shardsCollected = getAnimalCollectedShards(animal) + count;
+    });
 
-    // Update Chest progress metric
+    state.coins += 50;
     state.chestProgress++;
     
     saveState();
     updateHUD();
+    renderZooHabitat();
 
-    showProgressionOverlay(
-        getSolvedAnimalSummary(finalAnimals, state.levelZoneAssignments, state.animals, initialAnimals)
-    );
+    showProgressionOverlay(solvedAnimalSummary);
 }
 
 function restartCurrentLevel() {
@@ -502,7 +521,9 @@ function getTooltipDetails(kind) {
 
 if (new URLSearchParams(window.location.search).has("self-test")) {
     window.__zoodokuTestApi = {
-        applyLevelSelection
+        applyLevelSelection,
+        getCorrectPlacements: () => getCorrectPlacements(),
+        getGridValue: (row, col) => state.gridState?.[row]?.[col]
     };
 }
 

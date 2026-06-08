@@ -108,9 +108,6 @@ async function runSelfTest(capturedErrors) {
     assert(document.querySelectorAll("#grid-container .animal-head__image").length >= 3, "expected at least three solved animals after reveal");
     completedChecks.push("verified reveal power-up state");
 
-    await waitFor(() => typeof window.__zoodokuTestApi?.applyLevelSelection === "function", {
-        message: "self-test level selection hook"
-    });
     window.__zoodokuTestApi.applyLevelSelection(8);
     await waitFor(() => !document.getElementById("fierce-warning-modal")?.classList.contains("hidden"), {
         message: "hard-level warning modal to appear"
@@ -130,6 +127,71 @@ async function runSelfTest(capturedErrors) {
         message: "hard-level grid to rebuild at 7x7 after warning confirm"
     });
     completedChecks.push("confirmed hard-level warning");
+
+    window.__zoodokuTestApi.applyLevelSelection(2);
+    await waitFor(() => document.querySelectorAll("#grid-container [data-cell-key]").length === 25, {
+        timeoutMs: 5000,
+        message: "level 2 grid to rebuild at 5x5"
+    });
+    const correctPlacements = window.__zoodokuTestApi.getCorrectPlacements();
+    const solutionKeys = new Set(correctPlacements.map(([row, col]) => `${row}-${col}`));
+    let failedGuessCell = null;
+    for (let row = 0; row < 5 && !failedGuessCell; row++) {
+        for (let col = 0; col < 5; col++) {
+            if (!solutionKeys.has(`${row}-${col}`)) {
+                failedGuessCell = { row, col, selector: `#cell-${row}-${col}` };
+                break;
+            }
+        }
+    }
+    assert(failedGuessCell, "expected a non-solution cell for failed-guess lock test");
+
+    click(failedGuessCell.selector);
+    await wait(120);
+    click(failedGuessCell.selector);
+    await waitFor(() => window.__zoodokuTestApi.getGridValue(failedGuessCell.row, failedGuessCell.col) === 3, {
+        timeoutMs: 2000,
+        message: "failed guess cell to become locked"
+    });
+    await wait(900);
+    click(failedGuessCell.selector);
+    await wait(120);
+    click(failedGuessCell.selector);
+    assert(window.__zoodokuTestApi.getGridValue(failedGuessCell.row, failedGuessCell.col) === 3, "expected failed guess cell to remain locked after retry");
+    completedChecks.push("locked failed guess cell against future edits");
+
+    await waitFor(() => typeof window.__zoodokuTestApi?.applyLevelSelection === "function", {
+        message: "self-test level selection hook"
+    });
+    window.__zoodokuTestApi.applyLevelSelection(4, { zooFtue: true, openZoo: true });
+    await waitFor(() => !document.getElementById("zoo-welcome-panel")?.classList.contains("hidden"), {
+        message: "zoo welcome panel to appear"
+    });
+    click('[data-action="finish-zoo-welcome"]');
+    await waitFor(() => readText("#tutorial-step-indicator") === "Step 1/3", {
+        message: "zoo tutorial to start on Step 1/3"
+    });
+    completedChecks.push("entered zoo tutorial");
+
+    click('#animal-card-elephant [data-action="favorite-mascot"]');
+    await waitFor(() => readText("#tutorial-step-indicator") === "Step 2/3", {
+        message: "zoo tutorial to advance after favorite tap"
+    });
+    assert(readText("#animal-card-lion").includes("10/10"), "expected lion FTUE card to show full shard requirement");
+    assert(readText('#animal-card-lion [data-action="upgrade-animal"]').includes("FREE"), "expected lion FTUE upgrade button to show FREE");
+    completedChecks.push("advanced zoo tutorial after favorite");
+
+    click('#animal-card-lion [data-action="upgrade-animal"]');
+    await waitFor(() => readText("#tutorial-step-indicator") === "Step 3/3", {
+        message: "zoo tutorial to advance after free upgrade"
+    });
+    await waitFor(() => document.getElementById("tutorial-scrim")?.classList.contains("hidden"), {
+        message: "zoo tutorial scrim to hide on Step 3/3"
+    });
+    await waitFor(() => !readText('#animal-card-lion [data-action="upgrade-animal"]').includes("FREE"), {
+        message: "lion upgrade button to revert from FREE after FTUE"
+    });
+    completedChecks.push("reverted lion free upgrade label after FTUE");
 
     publishSelfTestResult("passed", {
         completedChecks,

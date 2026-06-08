@@ -27,17 +27,17 @@ export function createPuzzleInputHelpers({
 
     function markCellWithX(r, c, { toggle = false } = {}) {
         const currentVal = state.gridState[r][c];
-        if (currentVal === 2) return false;
+        if (currentVal === 2 || currentVal === 3) return false;
 
         if (toggle) {
             if (currentVal === 0) {
                 state.gridState[r][c] = 1;
-            } else if (currentVal === 1 || currentVal === 3) {
+            } else if (currentVal === 1) {
                 state.gridState[r][c] = 0;
             } else {
                 return false;
             }
-        } else if (currentVal === 0 || currentVal === 3) {
+        } else if (currentVal === 0) {
             state.gridState[r][c] = 1;
         } else {
             return false;
@@ -199,7 +199,7 @@ export function createPuzzleInputHelpers({
         const diff = now - lastTap;
         const currentVal = state.gridState[r][c];
 
-        if (currentVal === 2) return;
+        if (currentVal === 2 || currentVal === 3) return;
 
         if (handleGameFtueTap(r, c, diff, currentVal)) {
             lastTapTimes[key] = now;
