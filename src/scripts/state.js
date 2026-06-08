@@ -1,0 +1,83 @@
+import { SAVE_KEY, STARTER_ANIMAL_ID, initialAnimals } from "./data.js";
+
+export function cloneInitialAnimals() {
+    return JSON.parse(JSON.stringify(initialAnimals));
+}
+
+export const state = {
+    coins: 200,
+    favoriteMascot: STARTER_ANIMAL_ID,
+    hearts: 3,
+    currentLevelNumber: 1,
+    chestProgress: 0,
+    chestGoal: 3,
+    animals: cloneInitialAnimals(),
+    gridState: [],
+    brushMode: "cycle",
+    unlockedCompanionIds: [STARTER_ANIMAL_ID],
+    levelZoneAssignments: {},
+    zooUnlocked: false,
+    zooWelcomeSeen: false,
+    gameFtueComplete: false,
+    tutorialComplete: false,
+    tutorialStep: 0
+};
+
+export function mergeAnimalProgress(savedAnimals = []) {
+    const savedById = new Map(savedAnimals.map(animal => [animal.id, animal]));
+    return initialAnimals.map(defaultAnimal => {
+        const saved = savedById.get(defaultAnimal.id);
+        if (!saved) return { ...defaultAnimal };
+
+        return {
+            ...defaultAnimal,
+            level: saved.level ?? defaultAnimal.level,
+            shards: saved.shards ?? defaultAnimal.shards,
+            requiredShards: saved.requiredShards ?? defaultAnimal.requiredShards
+        };
+    });
+}
+
+export function loadState(targetState = state) {
+    try {
+        const stored = localStorage.getItem(SAVE_KEY);
+        if (!stored) return;
+
+        const parsed = JSON.parse(stored);
+        if (parsed.coins !== undefined) targetState.coins = parsed.coins;
+        if (parsed.favoriteMascot !== undefined) targetState.favoriteMascot = parsed.favoriteMascot;
+        if (parsed.currentLevelNumber !== undefined) targetState.currentLevelNumber = parsed.currentLevelNumber;
+        if (parsed.chestProgress !== undefined) targetState.chestProgress = parsed.chestProgress;
+        if (parsed.chestGoal !== undefined) targetState.chestGoal = parsed.chestGoal;
+        if (parsed.animals !== undefined) targetState.animals = mergeAnimalProgress(parsed.animals);
+        if (parsed.unlockedCompanionIds !== undefined) targetState.unlockedCompanionIds = parsed.unlockedCompanionIds;
+        if (parsed.zooUnlocked !== undefined) targetState.zooUnlocked = parsed.zooUnlocked;
+        if (parsed.zooWelcomeSeen !== undefined) targetState.zooWelcomeSeen = parsed.zooWelcomeSeen;
+        if (parsed.gameFtueComplete !== undefined) targetState.gameFtueComplete = parsed.gameFtueComplete;
+        if (parsed.tutorialComplete !== undefined) targetState.tutorialComplete = parsed.tutorialComplete;
+        if (parsed.tutorialStep !== undefined) targetState.tutorialStep = parsed.tutorialStep;
+    } catch (err) {
+        console.error("Local storage loading exception:", err);
+    }
+}
+
+export function saveState(targetState = state) {
+    try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify({
+            coins: targetState.coins,
+            favoriteMascot: targetState.favoriteMascot,
+            currentLevelNumber: targetState.currentLevelNumber,
+            chestProgress: targetState.chestProgress,
+            chestGoal: targetState.chestGoal,
+            animals: targetState.animals,
+            unlockedCompanionIds: targetState.unlockedCompanionIds,
+            zooUnlocked: targetState.zooUnlocked,
+            zooWelcomeSeen: targetState.zooWelcomeSeen,
+            gameFtueComplete: targetState.gameFtueComplete,
+            tutorialComplete: targetState.tutorialComplete,
+            tutorialStep: targetState.tutorialStep
+        }));
+    } catch (err) {
+        console.error("Local storage saving exception:", err);
+    }
+}

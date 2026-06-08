@@ -1,0 +1,402 @@
+{
+  "asset": {
+    "name": "zoodoku_animal_head_master_sheet_v1",
+    "file": "a_grid_of_20_animal_head_portraits_designed_in_a_c.png",
+    "type": "sprite_sheet",
+    "format": "png",
+    "width": 1536,
+    "height": 1024,
+    "transparentBackgroundExpected": true,
+    "actualTransparencyWarning": "The current generated sheet appears to include a rendered background rather than true alpha transparency. Use this metadata for indexing only unless the background is removed.",
+    "grid": {
+      "columns": 5,
+      "rows": 4,
+      "cellWidth": 307.2,
+      "cellHeight": 256.0,
+      "origin": "top-left",
+      "indexOrder": "row-major"
+    }
+  },
+  "sprites": [
+    {
+      "id": "rabbit",
+      "displayName": "Rabbit",
+      "index": 0,
+      "row": 0,
+      "col": 0,
+      "rectPx": {
+        "x": 0,
+        "y": 0,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.0,
+        "y": 0.0,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "fox",
+      "displayName": "Fox",
+      "index": 1,
+      "row": 0,
+      "col": 1,
+      "rectPx": {
+        "x": 307,
+        "y": 0,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.19987,
+        "y": 0.0,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "deer",
+      "displayName": "Deer",
+      "index": 2,
+      "row": 0,
+      "col": 2,
+      "rectPx": {
+        "x": 614,
+        "y": 0,
+        "w": 308,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.39974,
+        "y": 0.0,
+        "w": 0.200521,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "penguin",
+      "displayName": "Penguin",
+      "index": 3,
+      "row": 0,
+      "col": 3,
+      "rectPx": {
+        "x": 922,
+        "y": 0,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.60026,
+        "y": 0.0,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "capybara",
+      "displayName": "Capybara",
+      "index": 4,
+      "row": 0,
+      "col": 4,
+      "rectPx": {
+        "x": 1229,
+        "y": 0,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.80013,
+        "y": 0.0,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "duck",
+      "displayName": "Duck",
+      "index": 5,
+      "row": 1,
+      "col": 0,
+      "rectPx": {
+        "x": 0,
+        "y": 256,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.0,
+        "y": 0.25,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "walrus",
+      "displayName": "Walrus",
+      "index": 6,
+      "row": 1,
+      "col": 1,
+      "rectPx": {
+        "x": 307,
+        "y": 256,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.19987,
+        "y": 0.25,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "raccoon",
+      "displayName": "Raccoon",
+      "index": 7,
+      "row": 1,
+      "col": 2,
+      "rectPx": {
+        "x": 614,
+        "y": 256,
+        "w": 308,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.39974,
+        "y": 0.25,
+        "w": 0.200521,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "koala",
+      "displayName": "Koala",
+      "index": 8,
+      "row": 1,
+      "col": 3,
+      "rectPx": {
+        "x": 922,
+        "y": 256,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.60026,
+        "y": 0.25,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "flamingo",
+      "displayName": "Flamingo",
+      "index": 9,
+      "row": 1,
+      "col": 4,
+      "rectPx": {
+        "x": 1229,
+        "y": 256,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.80013,
+        "y": 0.25,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "red_panda",
+      "displayName": "Red Panda",
+      "index": 10,
+      "row": 2,
+      "col": 0,
+      "rectPx": {
+        "x": 0,
+        "y": 512,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.0,
+        "y": 0.5,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "rhino",
+      "displayName": "Rhino",
+      "index": 11,
+      "row": 2,
+      "col": 1,
+      "rectPx": {
+        "x": 307,
+        "y": 512,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.19987,
+        "y": 0.5,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "tiger",
+      "displayName": "Tiger",
+      "index": 12,
+      "row": 2,
+      "col": 2,
+      "rectPx": {
+        "x": 614,
+        "y": 512,
+        "w": 308,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.39974,
+        "y": 0.5,
+        "w": 0.200521,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "gorilla",
+      "displayName": "Gorilla",
+      "index": 13,
+      "row": 2,
+      "col": 3,
+      "rectPx": {
+        "x": 922,
+        "y": 512,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.60026,
+        "y": 0.5,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "elephant",
+      "displayName": "Elephant",
+      "index": 14,
+      "row": 2,
+      "col": 4,
+      "rectPx": {
+        "x": 1229,
+        "y": 512,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.80013,
+        "y": 0.5,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "polar_bear",
+      "displayName": "Polar Bear",
+      "index": 15,
+      "row": 3,
+      "col": 0,
+      "rectPx": {
+        "x": 0,
+        "y": 768,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.0,
+        "y": 0.75,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "giant_panda",
+      "displayName": "Giant Panda",
+      "index": 16,
+      "row": 3,
+      "col": 1,
+      "rectPx": {
+        "x": 307,
+        "y": 768,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.19987,
+        "y": 0.75,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "lion",
+      "displayName": "Lion",
+      "index": 17,
+      "row": 3,
+      "col": 2,
+      "rectPx": {
+        "x": 614,
+        "y": 768,
+        "w": 308,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.39974,
+        "y": 0.75,
+        "w": 0.200521,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "orca",
+      "displayName": "Orca",
+      "index": 18,
+      "row": 3,
+      "col": 3,
+      "rectPx": {
+        "x": 922,
+        "y": 768,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.60026,
+        "y": 0.75,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "phoenix",
+      "displayName": "Phoenix",
+      "index": 19,
+      "row": 3,
+      "col": 4,
+      "rectPx": {
+        "x": 1229,
+        "y": 768,
+        "w": 307,
+        "h": 256
+      },
+      "rectNorm": {
+        "x": 0.80013,
+        "y": 0.75,
+        "w": 0.19987,
+        "h": 0.25
+      }
+    }
+  ]
+}

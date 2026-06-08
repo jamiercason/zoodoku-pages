@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zoodoku - Animal Logic Puzzle & Zoo Tycoon</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body class="flex justify-center items-center min-h-screen bg-slate-900 overflow-hidden">
+
+    <!-- Game View Wrapper -->
+    <div id="game-view" class="relative w-full max-w-md h-screen md:h-[840px] md:rounded-3xl bg-emerald-50 shadow-2xl flex flex-col justify-between overflow-hidden border-4 border-slate-800 transition-colors duration-300">
+        
+        <!-- Confetti Area (Strictly confined to Game View) -->
+        <div id="confetti-container" class="absolute inset-0 pointer-events-none z-30 overflow-hidden"></div>
+
+        <!-- Tension Screen Vignette Overlay -->
+        <div id="tension-overlay-border" class="absolute inset-0 pointer-events-none z-20 transition-all duration-500 rounded-3xl"></div>
+
+        <button id="global-settings-btn" data-action="open-settings" class="absolute top-3 right-3 z-40 w-11 h-11 rounded-2xl border border-emerald-200 bg-white/90 text-slate-500 shadow-md backdrop-blur-sm transition hover:bg-emerald-50">
+            ⚙️
+        </button>
+
+        <!-- TOP HUD BAR -->
+        <div class="relative bg-gradient-to-b from-emerald-100 to-emerald-50 px-4 pt-3 pb-2 flex justify-between items-center border-b border-emerald-100 shadow-sm shrink-0 z-10">
+            <img id="hud-header-logo" src="../assets/Zoodoku-transparent.png" alt="Zoodoku" class="absolute left-1/2 top-1/2 w-20 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none">
+            <!-- Currencies & Stats -->
+            <div class="flex items-center space-x-3">
+                <div class="flex items-center bg-white px-2.5 py-1 rounded-full shadow-sm border border-emerald-200">
+                    <span class="coin-icon mr-2" aria-hidden="true"></span>
+                    <span id="coin-counter" class="font-bold text-slate-700 text-sm">200</span>
+                </div>
+                <div id="zoo-power-hud" class="flex items-center bg-white px-2.5 py-1 rounded-full shadow-sm border border-emerald-200 opacity-50">
+                    <span class="text-lg mr-1">⚡</span>
+                    <span id="power-counter" class="font-bold text-emerald-600 text-sm">0</span>
+                </div>
+            </div>
+
+            <!-- Mascot Indicator & Hearts -->
+            <div class="flex items-center space-x-3">
+                <div class="flex items-center bg-white px-2.5 py-1 rounded-full shadow-sm border border-rose-200">
+                    <span class="text-rose-500 font-bold mr-1 text-xs">LIFE:</span>
+                    <div id="heart-container" class="flex space-x-0.5 text-xs">
+                        ❤️❤️❤️
+                    </div>
+                </div>
+                <!-- Favorite Companion Star -->
+                <button id="zoo-mascot-btn" data-action="switch-tab" data-tab="zoo" class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shadow-md border-2 border-slate-300 pointer-events-none opacity-50" title="My Zoo Favorites">
+                    <span id="hud-mascot" class="inline-flex items-center justify-center"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN VIEW CONTAINER -->
+        <div id="main-view-container" class="flex-1 overflow-y-auto no-scrollbar flex flex-col justify-start relative">
+            
+            <!-- VIEW HOME: UNLOCKS AFTER LEVEL 9 -->
+            <div id="view-home" class="p-5 flex flex-col space-y-4 flex-1 justify-start items-center text-center hidden">
+                <div class="space-y-2 pt-2">
+                    <img src="../assets/Zoodoku-transparent.png" alt="Zoodoku" class="w-full max-w-[280px] mx-auto drop-shadow-[0_14px_28px_rgba(16,185,129,0.12)]">
+                    <p class="text-xs font-semibold text-emerald-600 uppercase tracking-[0.18em]">Puzzle Adventure</p>
+                </div>
+
+                <button data-action="switch-tab" data-tab="puzzle" class="w-full bg-white p-4 rounded-3xl shadow-md border border-emerald-100 space-y-4 text-left transition hover:scale-[1.01] active:scale-[0.99]">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div class="min-w-0">
+                            <h3 id="home-status-level" class="truncate text-sm font-black text-slate-800">Next level - 10 🟢 🌙 🧊</h3>
+                        </div>
+                        <span class="shrink-0 text-lg font-black text-emerald-500">▶</span>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-xs font-bold text-slate-500">
+                            <span>Treasure Chest</span>
+                            <span id="home-chest-progress-txt">2/4 Levels</span>
+                        </div>
+                        <div class="relative w-full bg-slate-100 h-3 rounded-full border border-slate-200">
+                            <div id="home-chest-progress-bar" class="bg-emerald-500 h-full transition-all duration-1000" style="width: 50%"></div>
+                            <span class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1 text-lg leading-none drop-shadow-sm">🎁</span>
+                        </div>
+                    </div>
+                </button>
+
+                <button data-action="switch-tab" data-tab="zoo" class="w-full overflow-hidden rounded-3xl border border-emerald-200 bg-white text-left shadow-md transition hover:scale-[1.01] active:scale-[0.99]">
+                    <div class="flex items-center justify-between border-b border-emerald-100 px-4 py-3">
+                        <div>
+                            <div class="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-500">Zoo Cam</div>
+                            <div class="text-sm font-black text-slate-800">My Zoo</div>
+                        </div>
+                        <div class="text-sm font-black text-slate-800">Visit ➔</div>
+                    </div>
+                    <div id="home-zoo-preview" class="relative h-28 bg-gradient-to-b from-green-300 to-emerald-400">
+                        <div class="absolute top-2 left-4 text-xs opacity-40">🌲</div>
+                        <div class="absolute top-6 right-6 text-xs opacity-40">🌳</div>
+                        <div class="absolute bottom-5 left-10 text-xs opacity-30">🌼</div>
+                        <div class="absolute bottom-3 right-3 text-[10px] opacity-50">💧 Pond</div>
+                        <div class="absolute bottom-1 right-1 h-8 w-14 rounded-full bg-sky-300/60 blur-sm"></div>
+                        <div id="home-habitat-roamers" class="absolute inset-0 pointer-events-none"></div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- VIEW A: PUZZLE ARENA -->
+            <div id="view-puzzle" class="p-4 flex flex-col flex-1 justify-between space-y-3">
+                
+                <!-- LEVEL SELECTION & PROGRESS HUD -->
+                <div class="relative mb-4">
+                    <div class="relative flex items-center justify-between gap-3 bg-white/90 backdrop-blur-sm px-3 py-2.5 rounded-2xl shadow-sm border border-emerald-100">
+                        <div class="min-w-0 flex flex-nowrap items-center gap-1 text-[11px] font-bold text-slate-700 overflow-hidden">
+                            <span id="level-number" class="mr-1 shrink-0 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">Level 1</span>
+                            <span class="level-chip">
+                                <span id="level-difficulty-icon">🟢</span>
+                                <span id="level-difficulty-label">Easy</span>
+                            </span>
+                            <button data-action="show-tooltip" data-tooltip="location" class="level-icon-button" aria-label="Level location">
+                                <span id="level-location-icon">🌳</span>
+                            </button>
+                            <button data-action="show-tooltip" data-tooltip="time" class="level-icon-button" aria-label="Level time">
+                                <span id="level-time-icon">☀️</span>
+                            </button>
+                            <button data-action="show-tooltip" data-tooltip="temp" class="level-icon-button" aria-label="Level temperature">
+                                <span id="level-temp-icon">🍃</span>
+                            </button>
+                        </div>
+                        <div class="shrink-0 pl-2 pr-12">
+                            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-right shadow-sm min-w-[64px]">
+                                <div class="text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-500">Animals</div>
+                                <div id="animal-total" class="text-base leading-none font-black text-emerald-700">5</div>
+                            </div>
+                        </div>
+                        <div id="hunt-target-checklist" class="absolute left-3 top-[calc(100%-1px)] z-10 flex flex-wrap gap-1.5">
+                            <!-- Loaded dynamically as tabs below the summary lozenge -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GAME GRID CONTAINER (SQUARE) -->
+                <div class="w-full flex items-center justify-center py-1">
+                    <div id="grid-container" class="w-full aspect-square bg-slate-800/10 p-2 rounded-2xl shadow-inner flex flex-col justify-between overflow-hidden">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- TARGET DIRECTIONS FOOTER -->
+                <div class="text-center py-1 bg-white/50 rounded-xl border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none">
+                        👆 Single-tap: Toggle X Marker | ✌️ Double-tap: Place Animal
+                    </p>
+                </div>
+
+                <!-- TOOL BAR / POWER UPS WITH INCREMENTING EXPONENTIAL COSTS -->
+                <div class="grid grid-cols-2 gap-3 shrink-0">
+                    <button data-action="reveal-species" class="powerup-button powerup-button-amber">
+                        <span class="powerup-icon" aria-hidden="true">🐾</span>
+                        <span class="powerup-label">Reveal</span>
+                        <span id="reveal-cost-badge" class="powerup-cost"><span class="coin-inline"><span>50</span><span class="coin-icon coin-icon--sm" aria-hidden="true"></span></span></span>
+                    </button>
+                    <button data-action="logical-exclusions" class="powerup-button powerup-button-indigo">
+                        <span class="powerup-icon" aria-hidden="true">💡</span>
+                        <span class="powerup-label">Hint</span>
+                        <span id="hint-cost-badge" class="powerup-cost"><span class="coin-inline"><span>30</span><span class="coin-icon coin-icon--sm" aria-hidden="true"></span></span></span>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- VIEW B: MY ZOO HABITAT -->
+            <div id="view-zoo" class="p-4 hidden space-y-4">
+                <div id="zoo-welcome-panel" class="bg-white rounded-3xl border border-emerald-100 shadow-md p-5 space-y-4 hidden">
+                    <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600">
+                        <span class="animal-head animal-head--tiny" role="img" aria-label="Elephant"><img class="animal-head__image" src="../assets/animals/elephant.png" alt="Elephant" draggable="false"></span>
+                        <span>Welcome to your Zoo</span>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-2xl font-black text-slate-800">Your animals live here.</h3>
+                        <p class="text-sm leading-relaxed text-slate-600">This is where the animals you discover come to live. Visit your Zoo to care for them, choose favorites, and help your animal family grow.</p>
+                    </div>
+                    <button data-action="finish-zoo-welcome" class="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3 text-sm font-black text-white shadow-md transition active:scale-95">
+                        Enter My Zoo
+                    </button>
+                </div>
+
+                <div id="zoo-habitat-content" class="space-y-4">
+                    <div class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-4 rounded-3xl shadow-md text-center shrink-0">
+                        <h2 class="text-xl font-bold">🍃 My Dream Zoo 🍃</h2>
+                        <p class="text-xs text-emerald-100 mt-1">Raise matching favorites to increase spawn rates in level environments!</p>
+                    </div>
+
+                    <!-- LUSH VIRTUAL PARK -->
+                    <div id="habitat-park" class="relative w-full h-44 bg-gradient-to-b from-green-300 to-emerald-400 rounded-3xl overflow-hidden border-4 border-emerald-500 shadow-inner shrink-0">
+                        <div class="absolute top-2 left-4 text-xs opacity-40">🌲</div>
+                        <div class="absolute top-8 right-8 text-xs opacity-40">🌳</div>
+                        <div class="absolute bottom-6 left-12 text-xs opacity-30">🌻</div>
+                        <div class="absolute bottom-10 right-16 text-xs opacity-30">🌷</div>
+                        <div class="absolute top-20 left-24 text-xs opacity-40">🌲</div>
+                        <div class="absolute bottom-2 right-2 text-xs opacity-50">💧 Pond</div>
+                        <div class="absolute bottom-1 right-1 w-16 h-10 bg-sky-300/60 rounded-full blur-sm"></div>
+
+                        <!-- Animated Unlocked Animals -->
+                        <div id="habitat-roamers" class="absolute inset-0 pointer-events-none"></div>
+                    </div>
+
+                    <!-- ANIMAL CARDS GRID -->
+                    <div class="flex-1">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Your Habitats</h3>
+                        <div id="animal-card-grid" class="grid grid-cols-2 gap-3"></div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- BOTTOM TAB NAVIGATION SYSTEM -->
+        <div id="nav-tabs" class="relative bg-white border-t border-slate-200 px-4 py-2.5 flex justify-around items-center shrink-0 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] z-10">
+            <!-- Home button visible/enabled based on Level 9 requirement -->
+            <button id="tab-btn-home" data-action="switch-tab" data-tab="home" class="flex flex-col items-center space-y-1 text-slate-400 transition duration-200 opacity-40 pointer-events-none">
+                <div class="w-12 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </div>
+                <span class="text-[11px] font-bold tracking-wide">Home <span id="home-lock-badge" class="text-[9px]">🔒</span></span>
+            </button>
+
+            <button id="tab-btn-puzzle" data-action="switch-tab" data-tab="puzzle" class="flex flex-col items-center space-y-1 text-emerald-600 transition duration-200 group">
+                <div class="w-12 h-8 rounded-full bg-emerald-100 flex items-center justify-center group-hover:scale-105 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a2 2 0 002 2h3a2 2 0 012 2v3a2 2 0 01-2 2h-1a2 2 0 100 4h1a2 2 0 012 2v3a2 2 0 01-2 2h-3a2 2 0 01-2-2v-1a2 2 0 10-4 0v1a2 2 0 01-2 2H4a2 2 0 01-2-2v-3a2 2 0 012-2h1a2 2 0 100-4H4a2 2 0 01-2-2V9a2 2 0 012-2h3a2 2 0 002-2V4z" />
+                    </svg>
+                </div>
+                <span class="text-[11px] font-bold tracking-wide">Play</span>
+            </button>
+
+            <button id="tab-btn-zoo" data-action="switch-tab" data-tab="zoo" class="flex flex-col items-center space-y-1 text-slate-400 transition duration-200 opacity-40 pointer-events-none cursor-not-allowed">
+                <div class="relative w-12 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span id="zoo-upgrade-badge" class="absolute -right-2 -top-2 hidden min-w-[1.15rem] rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-black leading-none text-white shadow-md">1</span>
+                </div>
+                <span id="tab-label-zoo" class="text-[11px] font-bold tracking-wide flex items-center">My Zoo <span class="ml-1 text-[9px]">🔒</span></span>
+            </button>
+            <span class="absolute bottom-1.5 right-3 text-[10px] font-bold tracking-[0.16em] text-slate-300">v0.01</span>
+        </div>
+
+        <!-- NEW: FORCED HIGHLIGHT FTUE TUTORIAL BackDrop Layer -->
+        <div id="tutorial-overlay" class="absolute inset-0 z-[60] bg-slate-950/75 pointer-events-auto hidden transition-all duration-300 flex flex-col justify-end">
+            <div id="tutorial-board-hand" class="pointing-finger absolute z-[70] hidden pointer-events-none text-3xl drop-shadow-[0_8px_12px_rgba(0,0,0,0.35)]">👆</div>
+            <!-- Zoo Guide Assistant PopUp Dialogue inside overlay -->
+            <div id="tutorial-dialogue-window" class="m-6 bg-white rounded-3xl p-5 border-4 border-amber-400 shadow-2xl flex flex-col space-y-3 pointer-events-auto transition-all duration-300">
+                <div class="flex items-center space-x-2">
+                    <span id="tutorial-guide-avatar" class="text-3xl">🧑‍🌾</span>
+                    <img id="tutorial-brand-logo" src="../assets/Zoodoku-transparent.png" alt="Zoodoku" class="hidden w-40">
+                    <div id="tutorial-title-wrap">
+                        <h4 id="tutorial-title" class="text-sm font-black text-indigo-700 uppercase leading-none">Zoo Guide</h4>
+                    </div>
+                </div>
+                <p id="tutorial-coachmark-text" class="text-xs text-slate-600 leading-relaxed font-medium">
+                    This is your Zoo Park! Let's get started.
+                </p>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <span id="tutorial-step-indicator" class="text-[10px] font-extrabold text-slate-400">Step 1/3</span>
+                    <button id="tutorial-dismiss-btn" data-action="tutorial-primary" class="bg-amber-400 hover:bg-amber-500 font-extrabold text-slate-800 text-[11px] py-1.5 px-4 rounded-xl shadow-sm transition hidden">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEVEL PROGRESSION OVERLAY WITH Chest Illustrated at the end of progress bar -->
+        <div id="progression-modal" class="absolute inset-0 z-50 hidden opacity-0 pointer-events-none transition-opacity duration-300">
+            <div id="progression-mask" class="level-win-mask absolute inset-0"></div>
+            <div class="relative flex h-full flex-col items-center justify-center px-5" style="padding-top:max(3rem,env(safe-area-inset-top));padding-bottom:max(1.5rem,env(safe-area-inset-bottom));">
+                <div class="level-win-stage w-full max-w-sm">
+                    <div id="progression-banner" class="level-win-banner px-3">
+                        <h2 id="progression-title" class="level-win-title text-[2.35rem] font-black leading-[0.92] text-white">Challenge Cleared!</h2>
+                    </div>
+
+                    <div id="progression-card" class="level-win-card relative -mt-20 w-full overflow-hidden rounded-[2rem] border-2 px-5 pb-5 pt-[7.25rem] text-center shadow-[0_28px_80px_rgba(0,0,0,0.46)]">
+                        <div class="level-win-card__noise"></div>
+                        <div class="relative z-10 flex flex-col items-center space-y-4">
+                            <div id="progression-kicker" class="text-[1.15rem] font-black uppercase tracking-[0.26em] text-lime-50/96">You Won</div>
+
+                            <div class="w-full rounded-[1.7rem] px-1 pb-1 pt-0">
+                                <div class="level-win-hero">
+                                    <div id="progression-animal-stage" class="level-win-animal-stage"></div>
+                                    <div class="level-win-coins">
+                                        <img src="../assets/coin-pile.png" alt="Pile of coins" class="level-win-coins__pile">
+                                        <div class="level-win-coins__value"><span class="level-win-coins__plus">+</span><span id="progression-coin-value">50</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full rounded-[1.42rem] border border-white/45 bg-[linear-gradient(180deg,_rgba(248,255,244,0.94)_0%,_rgba(237,250,229,0.9)_100%)] px-4 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="min-w-0 flex-1 space-y-1.5 text-left">
+                                        <span class="text-[1rem] font-black uppercase tracking-[0.14em] text-emerald-950">Treasure Chest</span>
+                                        <div class="h-3.5 overflow-hidden rounded-full border border-emerald-200/80 bg-emerald-100/85">
+                                            <div id="progression-bar" class="h-full bg-gradient-to-r from-lime-300 via-emerald-400 to-teal-400 transition-all duration-1000 ease-out" style="width: 33%"></div>
+                                        </div>
+                                        <div id="progression-text" class="text-[0.9rem] font-black text-emerald-950/88">1 / 3 Levels Completed</div>
+                                    </div>
+                                    <div class="relative flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center">
+                                        <div id="sparkle-layer" class="absolute inset-0 pointer-events-none overflow-visible"></div>
+                                        <img id="visual-chest" src="../assets/treasure-chest.png" alt="Treasure chest" class="h-full w-full object-contain drop-shadow-[0_12px_16px_rgba(0,0,0,0.24)]">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full space-y-2.5 pt-1">
+                                <button id="progression-cta-btn" data-action="progress-step" data-destination="next" class="w-full rounded-2xl bg-amber-400 px-6 py-4 text-base font-extrabold text-slate-900 shadow-[0_16px_28px_rgba(251,191,36,0.3)] transition-transform active:scale-95">
+                                    Next Level
+                                </button>
+                                <button id="progression-menu-btn" data-action="progress-step" data-destination="menu" class="hidden w-full rounded-2xl border border-white/12 bg-white/8 px-6 py-2.5 text-xs font-bold text-white/82 transition hover:bg-white/12">
+                                    🏠 Back to Main Menu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HARD / VERY HARD PRE-LEVEL FIERCE ANIMAL INTRO WARNING MODAL -->
+        <div id="fierce-warning-modal" class="absolute inset-0 hidden bg-[radial-gradient(circle_at_center,_rgba(239,68,68,0.24)_0%,_rgba(69,10,10,0.92)_42%,_rgba(28,8,8,0.98)_100%)] z-50 flex-col justify-center items-center text-center p-6 pointer-events-none">
+            <div class="fierce-warning-card max-w-xs rounded-[2rem] border border-red-400/30 bg-red-950/35 px-8 py-9 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-sm">
+                <div class="mx-auto mb-5 flex h-28 w-28 items-center justify-center rounded-full bg-red-900/40 shadow-[0_0_40px_rgba(248,113,113,0.28)]">
+                    <svg viewBox="0 0 120 120" class="h-20 w-20 text-red-200/95 drop-shadow-[0_0_18px_rgba(248,113,113,0.3)]" fill="currentColor" aria-hidden="true">
+                        <path d="M25 38c6-4 12-13 14-24 8 8 15 15 21 22 6-7 13-14 21-22 2 11 8 20 14 24 10 7 16 20 16 34 0 25-22 41-51 41S9 97 9 72c0-14 6-27 16-34Zm18 22c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9Zm34 0c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9Zm-35 25c8 6 28 6 36 0-3 13-12 20-18 20s-15-7-18-20Z" />
+                    </svg>
+                </div>
+                <div class="space-y-2">
+                    <h3 id="fierce-warning-title" class="text-red-300 font-black text-3xl tracking-[0.18em] uppercase leading-none">Hard Level</h3>
+                    <p id="fierce-warning-copy" class="text-[11px] text-red-100/85 font-black leading-relaxed uppercase tracking-[0.18em]">Brace yourself. This stage is more intense.</p>
+                </div>
+                <button id="fierce-warning-cta" data-action="confirm-fierce-warning" class="mt-6 w-full rounded-2xl bg-red-500 px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-white shadow-md transition hover:bg-red-400 active:scale-95">
+                    Play
+                </button>
+            </div>
+        </div>
+
+        <!-- SETTINGS MODAL DIALOG OVERLAY -->
+        <div id="settings-modal" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 hidden">
+            <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 border-4 border-emerald-400 flex flex-col space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                    <h2 class="text-lg font-black text-slate-800 flex items-center">
+                        <span class="mr-1.5">⚙️</span> Game Settings
+                    </h2>
+                    <button data-action="close-settings" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+                </div>
+
+                <div class="space-y-4 text-xs">
+                    <!-- Music setting toggle -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-800">Background SFX Synth</h4>
+                            <p class="text-[10px] text-slate-400">Hear direct deduction tune waves</p>
+                        </div>
+                        <button id="btn-toggle-sfx" data-action="toggle-audio" class="px-3.5 py-1.5 rounded-xl font-bold gold-coin-badge text-white">
+                            ENABLED
+                        </button>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-3 space-y-3">
+                        <div>
+                            <h4 class="font-bold text-slate-800">Level Select</h4>
+                            <p class="text-[10px] text-slate-400">Jump to a level and sync unlocks, chest progress, and navigation state for prototype testing.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input id="settings-level-input" type="number" min="1" step="1" class="flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-emerald-400" value="1">
+                            <button data-action="apply-selected-level" class="rounded-xl bg-emerald-500 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-white transition hover:bg-emerald-600">
+                                Load
+                            </button>
+                        </div>
+                        <div id="settings-level-summary" class="rounded-xl bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-500 border border-slate-200">
+                            Current level sync summary
+                        </div>
+                        <button data-action="jump-zoo-ftue" class="w-full flex items-center justify-between rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold py-2.5 px-3 border border-amber-200 transition">
+                            <span class="inline-flex items-center gap-2"><span class="animal-head animal-head--tiny" role="img" aria-label="Elephant"><img class="animal-head__image" src="../assets/animals/elephant.png" alt="Elephant" draggable="false"></span> Jump to Zoo Unlock FTUE</span>
+                            <span>➔</span>
+                        </button>
+                        <button data-action="replay-intro-ftue" class="w-full flex items-center justify-between rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 font-bold py-2.5 px-3 border border-sky-200 transition">
+                            <span>🎓 Replay Main FTUE</span>
+                            <span>➔</span>
+                        </button>
+                    </div>
+
+                    <!-- Rules documentation navigation -->
+                    <div class="border-t border-slate-100 pt-3">
+                        <button data-action="open-rules-from-settings" class="w-full flex items-center justify-between bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold py-2.5 px-3 rounded-xl transition">
+                            <span>📖 Read Game Rules</span>
+                            <span>➔</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button data-action="close-settings" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition text-xs">
+                    Close settings
+                </button>
+            </div>
+        </div>
+
+        <!-- TOOLTIP BALLOON OVERLAY -->
+        <div id="tooltip-balloon" class="absolute bg-slate-800 text-white rounded-xl p-2.5 text-[11px] shadow-xl z-50 max-w-[180px] pointer-events-none opacity-0 transition-opacity duration-200 leading-tight">
+            <h4 id="tooltip-title" class="font-extrabold text-amber-300">Tooltip Title</h4>
+            <p id="tooltip-desc" class="mt-0.5 text-slate-200 font-medium">Explanations here.</p>
+        </div>
+
+        <!-- TREASURE CHEST OPENING REWARDS -->
+        <div id="chest-opening-modal" class="absolute inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-6 hidden">
+            <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center border-4 border-yellow-400 flex flex-col items-center space-y-4">
+                
+                <img src="../assets/treasure-chest.png" alt="Treasure chest" class="h-24 w-24 object-contain animate-bounce drop-shadow-[0_12px_18px_rgba(120,53,15,0.2)]">
+                <h2 class="text-2xl font-extrabold text-amber-600">CHEST UNLOCKED!</h2>
+                <p class="text-sm text-slate-500 leading-snug font-medium max-w-[18rem]">Your zoo just grew. Claim your new animal first, then pocket the bonus coins and shards.</p>
+
+                <!-- Chest rewards showcase box -->
+                <div class="w-full bg-amber-50/60 rounded-[1.75rem] p-4 border border-yellow-100 space-y-3 shadow-inner">
+                    <div class="text-xs font-bold text-amber-800 uppercase tracking-[0.22em]">Rewards Obtained</div>
+                    
+                    <div class="grid grid-cols-[1.2fr,0.9fr] gap-3 items-stretch">
+                        <!-- Companion Unlocked Reward -->
+                        <div id="chest-reward-species-box" class="bg-gradient-to-b from-indigo-50 to-white p-4 rounded-[1.4rem] border border-indigo-200 shadow-sm text-center flex flex-col justify-center min-h-[11.5rem]">
+                            <div id="chest-reward-species-label" class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">NEW ANIMAL!</div>
+                            <span id="chest-reward-species-art" class="inline-flex justify-center mt-3"></span>
+                            <div id="chest-reward-species-name" class="text-xl leading-tight font-black text-indigo-700 mt-3">Elephant</div>
+                            <div class="text-[11px] font-bold text-indigo-400 mt-1">Added to your zoo</div>
+                        </div>
+
+                        <div class="flex flex-col gap-3">
+                            <!-- Coins Reward -->
+                            <div class="bg-white p-4 rounded-[1.4rem] border border-yellow-200 shadow-sm text-center flex flex-col justify-center flex-1 min-h-[8rem]">
+                                <span class="coin-icon coin-icon--xl mx-auto" aria-hidden="true"></span>
+                                <div class="text-[10px] font-black text-amber-500 mt-3 uppercase tracking-[0.18em]">Coins</div>
+                                <div id="chest-reward-coins" class="text-3xl leading-none font-black text-amber-600 mt-1">+100</div>
+                            </div>
+
+                            <!-- Extra Shards Reward -->
+                            <div class="bg-white/90 px-3 py-2.5 rounded-[1.2rem] border border-slate-200 shadow-sm flex items-center gap-3 text-left">
+                                <span id="chest-reward-shards-art" class="inline-flex justify-center shrink-0"></span>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.16em]">Bonus shards</div>
+                                    <div id="chest-reward-shards-text" class="text-sm font-black text-slate-700">+5</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full space-y-2">
+                    <button id="chest-primary-btn" data-action="close-chest" data-destination="next" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 px-6 rounded-2xl shadow-md transition-transform active:scale-95 text-sm">
+                        Collect and unlock your zoo!
+                    </button>
+                    <button id="chest-menu-btn" data-action="close-chest" data-destination="menu" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-2xl transition text-xs hidden">
+                        🏠 Back to Main Menu
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RETRY / GAME OVER OVERLAY -->
+        <div id="game-over-modal" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 hidden">
+            <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center border-4 border-rose-500">
+                <span class="text-6xl block mb-2">🩹</span>
+                <h2 class="text-2xl font-extrabold text-slate-800">NO HEARTS LEFT</h2>
+                <p class="text-sm text-slate-500 mt-1">The animals got startled by incorrect placements! Let's try again.</p>
+
+                <div class="my-5 flex justify-center space-x-1 text-2xl">
+                    🖤🖤🖤
+                </div>
+
+                <div class="space-y-2">
+                    <button data-action="restart-level" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-6 rounded-2xl shadow-md transition-transform active:scale-95 text-sm">
+                        Reset & Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOW TO PLAY RULES MODAL -->
+        <div id="how-to-play-modal" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 hidden">
+            <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 flex flex-col justify-between max-h-[85%] border-2 border-emerald-400">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center">
+                            <span class="mr-1.5">📖</span> Zoodoku Rules
+                        </h2>
+                        <button data-action="close-rules" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+                    </div>
+
+                    <div class="space-y-3 overflow-y-auto max-h-[380px] pr-1.5 text-xs text-slate-600">
+                        <p class="bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-100 font-medium">
+                            Your goal is to safely place exactly <strong>one animal</strong> per row, column, and colored region!
+                        </p>
+                        
+                        <div class="space-y-2">
+                            <div class="flex items-start space-x-2">
+                                <span class="bg-emerald-100 text-emerald-800 rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">1</span>
+                                <div><strong>One Animal Per Row & Column:</strong> You cannot place multiple animals in the same line of the grid.</div>
+                            </div>
+                            <div class="flex items-start space-x-2">
+                                <span class="bg-emerald-100 text-emerald-800 rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">2</span>
+                                <div><strong>One Animal Per Color Region:</strong> Every continuous pastel region must host exactly one animal.</div>
+                            </div>
+                            <div class="flex items-start space-x-2">
+                                <span class="bg-emerald-100 text-emerald-800 rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">3</span>
+                                <div><strong>No Adjacency (No Diagonal Touching):</strong> Animals cannot touch each other, even diagonally in any direction!</div>
+                            </div>
+                            <div class="flex items-start space-x-2">
+                                <span class="bg-emerald-100 text-emerald-800 rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">4</span>
+                                <div><strong>Mark or Place:</strong> Single tap or drag across tiles to add bold X exclusions. Double-tap still places an animal when you are confident.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button data-action="close-rules" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-2xl mt-4 transition text-xs">
+                    Let's Play!
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AUDIO & CODE MODULE -->
+    <script type="module" src="./scripts/game.js"></script>
+    <script type="module" src="./scripts/self-test.js"></script>
+</body>
+</html>
