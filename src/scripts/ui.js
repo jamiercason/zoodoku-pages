@@ -535,6 +535,13 @@ export function createUiHelpers({
         }
     }
 
+    function zooRoamerMarkup(animal) {
+        return `
+            <span class="zoo-roamer__sprite">${animalHeadMarkup(animal, 'animal-head--md')}</span>
+            <span class="zoo-roamer__level" aria-label="${animal.name} level ${animal.level}">${animal.level}</span>
+        `;
+    }
+
     function renderZooHabitat() {
         const roamerLayer = document.getElementById('habitat-roamers');
         const cardGrid = document.getElementById('animal-card-grid');
@@ -547,10 +554,10 @@ export function createUiHelpers({
 
         unlockedAnimals.forEach((animal, index) => {
             const roamer = document.createElement('div');
-            roamer.className = `absolute roamer-${index % 4}`;
+            roamer.className = `absolute zoo-roamer zoo-roamer--${index % 4}`;
             roamer.style.left = `${10 + (index * 18)}px`;
             roamer.style.top = `${12 + ((index % 3) * 24)}px`;
-            roamer.innerHTML = animalHeadMarkup(animal, 'animal-head--md');
+            roamer.innerHTML = zooRoamerMarkup(animal);
             roamerLayer.appendChild(roamer);
         });
 

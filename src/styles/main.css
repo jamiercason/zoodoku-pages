@@ -368,6 +368,72 @@
             filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.18));
         }
 
+        @keyframes zoo-roam-1 {
+            0%, 100% { transform: translate(10px, 10px); }
+            30% { transform: translate(120px, 40px); }
+            50% { transform: translate(80px, 80px); }
+            75% { transform: translate(20px, 90px); }
+        }
+
+        @keyframes zoo-roam-2 {
+            0%, 100% { transform: translate(150px, 60px); }
+            25% { transform: translate(50px, 20px); }
+            60% { transform: translate(110px, 75px); }
+            80% { transform: translate(170px, 15px); }
+        }
+
+        @keyframes zoo-roam-3 {
+            0%, 100% { transform: translate(40px, 110px); }
+            40% { transform: translate(130px, 100px); }
+            70% { transform: translate(90px, 30px); }
+        }
+
+        @keyframes zoo-roam-4 {
+            0%, 100% { transform: translate(160px, 120px); }
+            35% { transform: translate(30px, 70px); }
+            75% { transform: translate(110px, 120px); }
+        }
+
+        .zoo-roamer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.18rem;
+            width: max-content;
+            transform-origin: center bottom;
+            filter: drop-shadow(0 6px 10px rgba(15, 23, 42, 0.18));
+        }
+
+        .zoo-roamer__sprite {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoo-roamer__level {
+            display: inline-flex;
+            min-width: 1.3rem;
+            height: 1.3rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0 0.28rem;
+            border-radius: 999px;
+            border: 1px solid rgba(146, 64, 14, 0.16);
+            background: linear-gradient(180deg, #fde68a 0%, #f59e0b 100%);
+            box-shadow:
+                0 5px 12px rgba(180, 83, 9, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.68);
+            color: #78350f;
+            font-size: 0.68rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .zoo-roamer--0 { animation: zoo-roam-1 14s infinite ease-in-out; }
+        .zoo-roamer--1 { animation: zoo-roam-2 16s infinite ease-in-out; }
+        .zoo-roamer--2 { animation: zoo-roam-3 12s infinite ease-in-out; }
+        .zoo-roamer--3 { animation: zoo-roam-4 18s infinite ease-in-out; }
+
         .nav-tab-label {
             font-size: 0.66rem;
             font-weight: 900;
