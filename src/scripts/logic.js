@@ -1,5 +1,6 @@
 const ANIMAL_SHARD_GROWTH_RATE = 1.18;
 const ANIMAL_COIN_GROWTH_RATE = 1.16;
+export const ZOO_IDLE_COLLECTION_CAP_HOURS = 2;
 
 export function solveBoard(gridSize, colorMap) {
     const solutions = [];
@@ -44,6 +45,23 @@ export function calculateTotalPower(animals, unlockedCompanionIds) {
         if (!unlockedCompanionIds.includes(animal.id)) return total;
         return total + (animal.level * animal.powerMultiplier);
     }, 0);
+}
+
+export function getZooIdleRatePerMinute(totalPower) {
+    const normalizedPower = Math.max(0, Math.floor(totalPower || 0));
+    return Math.max(1, Math.floor(1 + (normalizedPower * 0.06)));
+}
+
+export function calculateZooIdleCoins({ lastCollectedAt, now = Date.now(), zooPower = 0 } = {}) {
+    if (!Number.isFinite(lastCollectedAt)) return 0;
+
+    const elapsedMs = Math.max(0, now - lastCollectedAt);
+    const cappedMinutes = Math.min(
+        elapsedMs / 60000,
+        ZOO_IDLE_COLLECTION_CAP_HOURS * 60
+    );
+
+    return Math.floor(cappedMinutes * getZooIdleRatePerMinute(zooPower));
 }
 
 export function getAnimalCollectedShards(animal) {

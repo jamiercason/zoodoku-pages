@@ -11,6 +11,7 @@ export const state = {
     currentLevelNumber: 1,
     chestProgress: 0,
     chestGoal: 3,
+    zooEarningsLastCollectedAt: Date.now(),
     animals: cloneInitialAnimals(),
     gridState: [],
     brushMode: "cycle",
@@ -55,11 +56,23 @@ export function loadState(targetState = state) {
         if (!stored) return;
 
         const parsed = JSON.parse(stored);
+        const unlockedIds = parsed.unlockedCompanionIds;
+        const hasZooProgress = parsed.zooUnlocked || (Array.isArray(unlockedIds) && unlockedIds.length > 1);
+        const now = Date.now();
+        const fallbackZooTimestamp = hasZooProgress
+            ? now - (3 * 60 * 1000)
+            : now;
         if (parsed.coins !== undefined) targetState.coins = parsed.coins;
         if (parsed.favoriteMascot !== undefined) targetState.favoriteMascot = parsed.favoriteMascot;
         if (parsed.currentLevelNumber !== undefined) targetState.currentLevelNumber = parsed.currentLevelNumber;
         if (parsed.chestProgress !== undefined) targetState.chestProgress = parsed.chestProgress;
         if (parsed.chestGoal !== undefined) targetState.chestGoal = parsed.chestGoal;
+        if (parsed.zooEarningsLastCollectedAt !== undefined) {
+            targetState.zooEarningsLastCollectedAt = parsed.zooEarningsLastCollectedAt;
+        } else {
+            // Seed a short offline window for older saves so idle income starts visibly working after this feature lands.
+            targetState.zooEarningsLastCollectedAt = fallbackZooTimestamp;
+        }
         if (parsed.animals !== undefined) targetState.animals = mergeAnimalProgress(parsed.animals);
         if (parsed.unlockedCompanionIds !== undefined) targetState.unlockedCompanionIds = parsed.unlockedCompanionIds;
         if (parsed.zooUnlocked !== undefined) targetState.zooUnlocked = parsed.zooUnlocked;
@@ -67,6 +80,12 @@ export function loadState(targetState = state) {
         if (parsed.gameFtueComplete !== undefined) targetState.gameFtueComplete = parsed.gameFtueComplete;
         if (parsed.tutorialComplete !== undefined) targetState.tutorialComplete = parsed.tutorialComplete;
         if (parsed.tutorialStep !== undefined) targetState.tutorialStep = parsed.tutorialStep;
+        const normalizedZooTimestamp = Number(targetState.zooEarningsLastCollectedAt);
+        if (!Number.isFinite(normalizedZooTimestamp) || normalizedZooTimestamp > now) {
+            targetState.zooEarningsLastCollectedAt = fallbackZooTimestamp;
+        } else {
+            targetState.zooEarningsLastCollectedAt = normalizedZooTimestamp;
+        }
     } catch (err) {
         console.error("Local storage loading exception:", err);
     }
@@ -80,6 +99,7 @@ export function saveState(targetState = state) {
             currentLevelNumber: targetState.currentLevelNumber,
             chestProgress: targetState.chestProgress,
             chestGoal: targetState.chestGoal,
+            zooEarningsLastCollectedAt: targetState.zooEarningsLastCollectedAt,
             animals: targetState.animals,
             unlockedCompanionIds: targetState.unlockedCompanionIds,
             zooUnlocked: targetState.zooUnlocked,

@@ -11,6 +11,8 @@ import {
     times
 } from "./data.js";
 import {
+    ZOO_IDLE_COLLECTION_CAP_HOURS,
+    calculateZooIdleCoins,
     calculateTotalPower,
     canUpgradeAnimal,
     computeProgressionForLevel,
@@ -18,19 +20,20 @@ import {
     getAnimalCollectedShards,
     getAnimalShardProgress,
     getAnimalUpgradeCoinCost,
+    getZooIdleRatePerMinute,
     getLevelDifficulty,
     getSolvedAnimalSummary,
     selectLevelLayout,
     solveBoard
-} from "./logic.js";
+} from "./logic.js?v=20260609e";
 import { createGridSetupHelpers } from "./grid-setup.js";
 import { createPuzzleActionHelpers } from "./puzzle-actions.js";
-import { cloneInitialAnimals, loadState, saveState, state } from "./state.js";
+import { cloneInitialAnimals, loadState, saveState, state } from "./state.js?v=20260609e";
 import { createPuzzleInputHelpers } from "./puzzle-input.js";
-import { createUiHelpers } from "./ui.js";
+import { createUiHelpers } from "./ui.js?v=20260609e";
 import { createTutorialHelpers } from "./tutorials.js";
-import { createTransitionHelpers } from "./transitions.js";
-import { bindUiEvents } from "./events.js";
+import { createTransitionHelpers } from "./transitions.js?v=20260609e";
+import { bindUiEvents } from "./events.js?v=20260609e";
 
 // ----------------- AUDIO ENGINE -----------------
 let isAudioMuted = false;
@@ -223,6 +226,8 @@ const {
 });
 
 const {
+    collectZooEarnings,
+    getCurrentZooEarnings,
     hideProgressionOverlay,
     populateSettingsLevelControls,
     renderChecklistHUD,
@@ -250,6 +255,7 @@ const {
     favoriteTutorialAnimalId: FAVORITE_TUTORIAL_ANIMAL_ID,
     upgradeTutorialAnimalId: UPGRADE_TUTORIAL_ANIMAL_ID,
     canUpgradeAnimal,
+    calculateZooIdleCoins,
     getAnimalCollectedShards,
     getAnimalShardProgress,
     getAnimalUpgradeCoinCost,
@@ -265,6 +271,8 @@ const {
     getTimeIcon,
     getTempIcon,
     getMascotArt,
+    getZooIdleRatePerMinute,
+    zooIdleCapHours: ZOO_IDLE_COLLECTION_CAP_HOURS,
     calculateTotalPower,
     playSound
 });
@@ -420,20 +428,27 @@ gridSetupHelpers = createGridSetupHelpers({
 
 // ----------------- ECONOMY & PROGRESSION SYSTEM -----------------
 function levelComplete(finalAnimals) {
+    const rewardCoins = 50;
     const solvedAnimalSummary = getSolvedAnimalSummary(finalAnimals, state.levelZoneAssignments, state.animals, initialAnimals);
     solvedAnimalSummary.forEach(({ animal, count }) => {
         if (!animal) return;
         animal.shardsCollected = getAnimalCollectedShards(animal) + count;
     });
 
-    state.coins += 50;
     state.chestProgress++;
     
     saveState();
     updateHUD();
     renderZooHabitat();
 
-    showProgressionOverlay(solvedAnimalSummary);
+    showProgressionOverlay(solvedAnimalSummary, {
+        coinReward: rewardCoins,
+        autoCollectReward: true,
+        onRewardCollected: () => {
+            saveState();
+            updateHUD();
+        }
+    });
 }
 
 function restartCurrentLevel() {
@@ -468,6 +483,20 @@ function toggleAudioMute() {
         btn.innerText = "ENABLED";
         btn.className = "px-3.5 py-1.5 rounded-xl font-bold gold-coin-badge text-white";
     }
+}
+
+async function handleCollectZooEarnings() {
+    const claimedAt = Date.now();
+    const availableCoins = getCurrentZooEarnings(claimedAt);
+    if (availableCoins <= 0) return;
+
+    playSound('win');
+    await collectZooEarnings(availableCoins, () => {
+        state.zooEarningsLastCollectedAt = claimedAt;
+        saveState();
+        updateHUD();
+        renderHomeScreen();
+    });
 }
 
 function getLevelLocationIcon(location) {
@@ -533,6 +562,7 @@ document.addEventListener("DOMContentLoaded", () => {
         getTooltipDetails,
         handlers: {
             applySelectedLevelFromSettings,
+            collectZooEarnings: handleCollectZooEarnings,
             confirmFierceWarning,
             finishZooWelcome,
             jumpToZooUnlockFtue,
@@ -561,4 +591,14 @@ document.addEventListener("DOMContentLoaded", () => {
     initGrid();
     renderHomeScreen();
     updateHeaderLogoVisibility('puzzle');
+
+    window.setInterval(() => {
+        renderHomeScreen();
+    }, 5000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            renderHomeScreen();
+        }
+    });
 });

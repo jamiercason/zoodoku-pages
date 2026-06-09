@@ -122,12 +122,14 @@ export function createGridSetupHelpers({
     }
 
     function applyDifficultyTheme() {
-        const gameView = document.getElementById('game-view');
+        const puzzleView = document.getElementById('view-puzzle');
         const tensionVignette = document.getElementById('tension-overlay-border');
-        if (!gameView || !tensionVignette) return;
+        if (!puzzleView || !tensionVignette) return;
 
         const isHardMode = activeLevelData.difficulty === "HARD" || activeLevelData.difficulty === "VERY HARD";
-        gameView.classList.toggle('hard-mode', isHardMode);
+        puzzleView.classList.toggle('hard-mode', isHardMode);
+        puzzleView.classList.toggle('hard-mode--hard', activeLevelData.difficulty === "HARD");
+        puzzleView.classList.toggle('hard-mode--very-hard', activeLevelData.difficulty === "VERY HARD");
 
         if (isHardMode) {
             tensionVignette.classList.add('tension-vignette', 'ring-8', 'ring-red-500/80');

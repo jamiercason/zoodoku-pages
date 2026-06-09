@@ -49,6 +49,7 @@ export function createTransitionHelpers({
         state.currentLevelNumber = progression.currentLevelNumber;
         state.chestGoal = progression.chestGoal;
         state.chestProgress = progression.chestProgress;
+        state.zooEarningsLastCollectedAt = Date.now();
         state.unlockedCompanionIds = progression.unlockedCompanionIds;
         state.zooUnlocked = progression.zooUnlocked;
         state.coins = progression.coins;
@@ -170,7 +171,7 @@ export function createTransitionHelpers({
 
     function onNextProgressStep(destination = 'next') {
         stopChestSparkles();
-        hideProgressionOverlay();
+        hideProgressionOverlay({ collectPendingReward: true });
 
         if (state.chestProgress >= state.chestGoal) {
             triggerChestOpeningSequence(destination);
@@ -190,9 +191,10 @@ export function createTransitionHelpers({
     function triggerChestOpeningSequence(destinationFlow = 'next') {
         playSound('win');
         const modal = document.getElementById('chest-opening-modal');
-        const primaryBtn = document.getElementById('chest-primary-btn');
+        const zooBtn = document.getElementById('chest-zoo-btn');
+        const nextBtn = document.getElementById('chest-next-btn');
         const rewardSpeciesBox = document.getElementById('chest-reward-species-box');
-        if (!modal || !primaryBtn || !rewardSpeciesBox) return;
+        if (!modal || !zooBtn || !nextBtn || !rewardSpeciesBox) return;
 
         modal.classList.remove('hidden');
 
@@ -203,7 +205,8 @@ export function createTransitionHelpers({
             document.getElementById('chest-reward-species-art').innerHTML = animalHeadMarkup(nextLockedAnimal, 'animal-head--2xl');
             document.getElementById('chest-reward-species-name').innerText = nextLockedAnimal.name;
             document.getElementById('chest-reward-species-label').innerText = "NEW ANIMAL!";
-            primaryBtn.innerText = "Collect and unlock your zoo!";
+            zooBtn.innerText = "Collect and Visit Zoo";
+            nextBtn.innerText = "Collect and Next Level";
             rewardSpeciesBox.classList.remove('hidden');
 
             checkZooUnlockingProgress();
@@ -211,7 +214,8 @@ export function createTransitionHelpers({
             document.getElementById('chest-reward-species-art').innerHTML = '<img src="../assets/treasure-chest.png" alt="Treasure chest" class="h-24 w-24 object-contain drop-shadow-[0_12px_18px_rgba(120,53,15,0.2)]">';
             document.getElementById('chest-reward-species-name').innerText = "Gold Card";
             document.getElementById('chest-reward-species-label').innerText = "WILDCARD";
-            primaryBtn.innerText = "Collect & Continue Level";
+            zooBtn.innerText = "Collect and Visit Zoo";
+            nextBtn.innerText = "Collect and Next Level";
         }
 
         const ownedAnimals = state.animals.filter(animal => state.unlockedCompanionIds.includes(animal.id));
@@ -229,7 +233,7 @@ export function createTransitionHelpers({
 
         const menuBtn = document.getElementById('chest-menu-btn');
         if (menuBtn) {
-            menuBtn.classList.toggle('hidden', state.currentLevelNumber < 9);
+            menuBtn.classList.remove('hidden');
         }
 
         saveState();
@@ -255,8 +259,14 @@ export function createTransitionHelpers({
         state.currentLevelNumber++;
         saveState();
 
-        if (destination === 'menu' && state.currentLevelNumber >= 10) {
-            switchTab('home');
+        if (destination === 'zoo') {
+            switchTab('zoo');
+        } else if (destination === 'menu') {
+            if (state.currentLevelNumber >= 10) {
+                switchTab('home');
+            } else {
+                switchTab('puzzle');
+            }
         } else if (state.zooUnlocked && !state.zooWelcomeSeen) {
             switchTab('zoo');
         } else {

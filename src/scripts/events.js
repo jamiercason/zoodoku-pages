@@ -77,6 +77,9 @@ export function bindUiEvents({
             case 'upgrade-animal':
                 handlers.upgradeAnimal(actionEl.dataset.animalId);
                 break;
+            case 'collect-zoo-earnings':
+                handlers.collectZooEarnings();
+                break;
             default:
                 break;
         }

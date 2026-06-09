@@ -3,6 +3,7 @@ export function createUiHelpers({
     favoriteTutorialAnimalId,
     upgradeTutorialAnimalId,
     canUpgradeAnimal,
+    calculateZooIdleCoins,
     getAnimalCollectedShards,
     getAnimalShardProgress,
     getAnimalUpgradeCoinCost,
@@ -18,10 +19,16 @@ export function createUiHelpers({
     getTimeIcon,
     getTempIcon,
     getMascotArt,
+    getZooIdleRatePerMinute,
+    zooIdleCapHours,
     calculateTotalPower,
     playSound
 }) {
     let sparkleInterval = null;
+    let isZooEarningsCollecting = false;
+    let progressionRewardTimeout = null;
+    let pendingProgressionReward = null;
+    const habitatRoamerSignatures = new Map();
 
     function syncHomeUnlockUI() {
         const homeBtn = document.getElementById('tab-btn-home');
@@ -78,21 +85,116 @@ export function createUiHelpers({
         headerLogo.classList.toggle('hidden', activeTab === 'home');
     }
 
-    function renderHomeZooPreview() {
-        const roamerLayer = document.getElementById('home-habitat-roamers');
+    function getZooPowerTotal() {
+        return calculateTotalPower(state.animals, state.unlockedCompanionIds);
+    }
+
+    function getSafeZooEarningsTimestamp(now = Date.now()) {
+        const numericTimestamp = Number(state.zooEarningsLastCollectedAt);
+        const hasZooProgress = state.zooUnlocked || state.unlockedCompanionIds.length > 1;
+        const fallbackTimestamp = hasZooProgress
+            ? now - (3 * 60 * 1000)
+            : now;
+
+        if (!Number.isFinite(numericTimestamp) || numericTimestamp > now) {
+            state.zooEarningsLastCollectedAt = fallbackTimestamp;
+            return fallbackTimestamp;
+        }
+
+        return numericTimestamp;
+    }
+
+    function getCurrentZooEarnings(now = Date.now()) {
+        return calculateZooIdleCoins({
+            lastCollectedAt: getSafeZooEarningsTimestamp(now),
+            now,
+            zooPower: getZooPowerTotal()
+        });
+    }
+
+    function getHabitatRoamerPosition(index) {
+        return {
+            left: 10 + (index * 18),
+            top: 12 + ((index % 3) * 24)
+        };
+    }
+
+    function habitatRoamerMarkup(animal) {
+        const isFavorite = state.favoriteMascot === animal.id;
+        const favoriteBadge = isFavorite
+            ? '<span class="favorite-growl-badge zoo-roamer__favorite" aria-label="Favorite animal">⭐</span>'
+            : '';
+
+        return `
+            <span class="zoo-roamer__sprite">
+                ${favoriteBadge}
+                ${animalHeadMarkup(animal, 'animal-head--md')}
+            </span>
+            <span class="zoo-roamer__level" aria-label="${animal.name} level ${animal.level}">${animal.level}</span>
+        `;
+    }
+
+    function getHabitatRoamerSignature() {
+        return state.animals
+            .filter(animal => state.unlockedCompanionIds.includes(animal.id))
+            .map(animal => `${animal.id}:${animal.level}:${state.favoriteMascot === animal.id ? 'fav' : 'plain'}`)
+            .join('|');
+    }
+
+    function renderHabitatRoamers(layerId) {
+        const roamerLayer = document.getElementById(layerId);
         if (!roamerLayer) return;
 
-        roamerLayer.innerHTML = '';
         const unlockedAnimals = state.animals.filter(animal => state.unlockedCompanionIds.includes(animal.id));
+        const nextSignature = getHabitatRoamerSignature();
 
-        unlockedAnimals.slice(0, 5).forEach((animal, index) => {
+        if (habitatRoamerSignatures.get(layerId) === nextSignature) {
+            return;
+        }
+
+        habitatRoamerSignatures.set(layerId, nextSignature);
+        roamerLayer.innerHTML = '';
+
+        unlockedAnimals.forEach((animal, index) => {
             const roamer = document.createElement('div');
-            roamer.className = `absolute home-roamer roamer-${index % 4}`;
-            roamer.style.left = `${16 + (index * 46)}px`;
-            roamer.style.top = `${18 + ((index + 1) % 2) * 24}px`;
-            roamer.innerHTML = animalHeadMarkup(animal, 'animal-head--sm');
+            const anchor = getHabitatRoamerPosition(index);
+            roamer.className = `absolute zoo-roamer zoo-roamer--${index % 4}`;
+            roamer.style.left = `${anchor.left}px`;
+            roamer.style.top = `${anchor.top}px`;
+            roamer.innerHTML = habitatRoamerMarkup(animal);
             roamerLayer.appendChild(roamer);
         });
+    }
+
+    function renderHomeZooPreview() {
+        renderHabitatRoamers('home-habitat-roamers');
+    }
+
+    function renderZooEarningsCard() {
+        const card = document.getElementById('zoo-earnings-card');
+        const amount = document.getElementById('zoo-earnings-amount');
+        const chest = document.getElementById('zoo-earnings-chest');
+        if (!card || !amount || !chest) return;
+
+        const zooPower = getZooPowerTotal();
+        const coinsReady = getCurrentZooEarnings();
+        const ratePerMinute = getZooIdleRatePerMinute(zooPower);
+        const isReady = coinsReady > 0;
+
+        amount.innerHTML = `<span class="coin-icon coin-icon--sm" aria-hidden="true"></span><span>${coinsReady}</span>`;
+        card.title = `Zoo power ${zooPower} • +${ratePerMinute}/min • caps after ${zooIdleCapHours}h`;
+        card.setAttribute(
+            'aria-label',
+            isReady
+                ? `Zoo Earnings, ${coinsReady} coins ready to collect`
+                : `Zoo Earnings, building at power ${zooPower} and ${ratePerMinute} coins per minute`
+        );
+
+        card.disabled = !isReady || isZooEarningsCollecting;
+        card.classList.toggle('zoo-earnings-card--ready', isReady);
+        card.classList.toggle('zoo-earnings-card--empty', !isReady);
+        card.classList.toggle('zoo-earnings-card--collecting', isZooEarningsCollecting);
+        chest.classList.toggle('jiggle-chest', isReady && !isZooEarningsCollecting);
     }
 
     function renderHomeScreen() {
@@ -111,9 +213,10 @@ export function createUiHelpers({
             statusLevel.innerHTML = `Next level - ${state.currentLevelNumber} ${levelIcons}`;
         }
         if (chestText) chestText.innerText = `${state.chestProgress} / ${state.chestGoal} Levels`;
-        if (chestBar) chestBar.style.width = `${(state.chestProgress / state.chestGoal) * 100}%`;
+        if (chestBar) chestBar.style.width = `${Math.min((state.chestProgress / state.chestGoal) * 100, 100)}%`;
 
         renderHomeZooPreview();
+        renderZooEarningsCard();
     }
 
     function setZooWelcomeVisibility(showWelcome) {
@@ -134,21 +237,14 @@ export function createUiHelpers({
 
         container.innerHTML = '';
 
-        const targets = {};
-        for (let zoneId = 0; zoneId < activeLevelData.gridSize; zoneId++) {
-            const animalId = state.levelZoneAssignments[zoneId];
-            targets[animalId] = (targets[animalId] || 0) + 1;
-        }
+        const { currentCounts, targets, currentTotal, targetTotal } = getPuzzleAnimalCounts();
 
-        const currentCounts = {};
-        for (let r = 0; r < activeLevelData.gridSize; r++) {
-            for (let c = 0; c < activeLevelData.gridSize; c++) {
-                if (state.gridState[r][c] !== 2) continue;
-                const zoneId = activeLevelData.colorMap[r][c];
-                const animalId = state.levelZoneAssignments[zoneId];
-                currentCounts[animalId] = (currentCounts[animalId] || 0) + 1;
-            }
-        }
+        const totalChip = document.createElement('div');
+        totalChip.className = 'checklist-chip checklist-chip--total';
+        totalChip.innerHTML = `
+            <span id="animal-total" class="checklist-chip__value">${currentTotal}/${targetTotal}</span>
+        `;
+        container.appendChild(totalChip);
 
         Object.keys(targets).sort().forEach(animalId => {
             const animal = state.animals.find(entry => entry.id === animalId);
@@ -159,13 +255,51 @@ export function createUiHelpers({
             const isComplete = activeCount === targetCount;
 
             const tab = document.createElement('div');
-            tab.className = `flex items-center space-x-1 px-3 py-1.5 rounded-b-2xl rounded-t-xl border border-t-0 font-bold transition-all shadow-sm text-xs ${isComplete ? 'bg-emerald-500 border-emerald-600 text-white' : 'bg-white border-emerald-100 text-slate-700'}`;
+            tab.className = `checklist-chip ${isComplete ? 'checklist-chip--complete' : 'checklist-chip--pending'}`;
             tab.innerHTML = `
                 ${animalHeadMarkup(animal, 'animal-head--tiny')}
-                <span>${activeCount}/${targetCount}</span>
+                <span class="checklist-chip__value">${activeCount}/${targetCount}</span>
             `;
             container.appendChild(tab);
         });
+    }
+
+    function getPuzzleAnimalCounts() {
+        const activeLevelData = getActiveLevelData();
+        const targets = {};
+        const currentCounts = {};
+
+        if (!activeLevelData.gridSize) {
+            return {
+                targets,
+                currentCounts,
+                currentTotal: 0,
+                targetTotal: 0
+            };
+        }
+
+        for (let zoneId = 0; zoneId < activeLevelData.gridSize; zoneId++) {
+            const animalId = state.levelZoneAssignments[zoneId];
+            targets[animalId] = (targets[animalId] || 0) + 1;
+        }
+
+        let currentTotal = 0;
+        for (let r = 0; r < activeLevelData.gridSize; r++) {
+            for (let c = 0; c < activeLevelData.gridSize; c++) {
+                if (state.gridState[r][c] !== 2) continue;
+                currentTotal += 1;
+                const zoneId = activeLevelData.colorMap[r][c];
+                const animalId = state.levelZoneAssignments[zoneId];
+                currentCounts[animalId] = (currentCounts[animalId] || 0) + 1;
+            }
+        }
+
+        return {
+            targets,
+            currentCounts,
+            currentTotal,
+            targetTotal: Object.values(targets).reduce((sum, count) => sum + count, 0)
+        };
     }
 
     function updateCellVisual(r, c) {
@@ -211,10 +345,10 @@ export function createUiHelpers({
     }
 
     function updateProgressText() {
-        const activeLevelData = getActiveLevelData();
         const animalTotal = document.getElementById('animal-total');
-        if (animalTotal && activeLevelData.gridSize) {
-            animalTotal.innerText = String(activeLevelData.gridSize);
+        if (animalTotal) {
+            const { currentTotal, targetTotal } = getPuzzleAnimalCounts();
+            animalTotal.innerText = `${currentTotal}/${targetTotal}`;
         }
 
         syncZooUnlockUI();
@@ -232,9 +366,11 @@ export function createUiHelpers({
             const dancer = document.createElement('div');
             dancer.className = `level-win-animal ${index === 0 ? 'level-win-animal--lead' : ''}`;
             dancer.style.setProperty('--win-delay', `${index * 0.08}s`);
-            const sizeClass = index === 0 ? 'animal-head--2xl' : 'animal-head--xl';
+            const sizeClass = 'animal-head--xl';
+            const isFavorite = entry.animal?.id === state.favoriteMascot;
             dancer.innerHTML = `
                 <div class="level-win-animal__head">
+                    ${isFavorite ? '<div class="favorite-growl-badge level-win-animal__favorite" aria-label="Favorite animal">⭐</div>' : ''}
                     ${animalHeadMarkup(entry.animal, sizeClass)}
                     ${entry.count > 1 ? `<span class="level-win-animal__badge">${entry.count}</span>` : ''}
                 </div>
@@ -243,18 +379,88 @@ export function createUiHelpers({
         });
     }
 
-    function hideProgressionOverlay() {
+    function setProgressionOverlayButtonsEnabled(enabled) {
+        const ctaBtn = document.getElementById('progression-cta-btn');
+        const menuBtn = document.getElementById('progression-menu-btn');
+
+        [ctaBtn, menuBtn].forEach(button => {
+            if (!button) return;
+            button.disabled = !enabled;
+            button.classList.toggle('pointer-events-none', !enabled);
+            button.classList.toggle('opacity-60', !enabled);
+        });
+    }
+
+    function settlePendingProgressionReward({ animate = true } = {}) {
+        if (!pendingProgressionReward) return;
+
+        const { coinReward, onRewardCollected } = pendingProgressionReward;
+        pendingProgressionReward = null;
+
+        if (progressionRewardTimeout) {
+            window.clearTimeout(progressionRewardTimeout);
+            progressionRewardTimeout = null;
+        }
+
+        if (coinReward <= 0) {
+            if (typeof onRewardCollected === 'function') {
+                onRewardCollected(coinReward);
+            }
+            return;
+        }
+
+        if (!animate) {
+            state.coins += coinReward;
+            updateCoinCounterValue(state.coins);
+            if (typeof onRewardCollected === 'function') {
+                onRewardCollected(coinReward);
+            }
+            pulseCoinCounter();
+            return;
+        }
+
+        const startingCoins = state.coins;
+        let animatedCoins = 0;
+
+        animateCoinsToHud(coinReward, {
+            sourceEl: document.getElementById('progression-coin-burst'),
+            onCoinLand(chunkAmount) {
+                animatedCoins += chunkAmount;
+                state.coins = startingCoins + animatedCoins;
+                updateCoinCounterValue(state.coins);
+            }
+        }).then(() => {
+            state.coins = startingCoins + coinReward;
+            updateCoinCounterValue(state.coins);
+            if (typeof onRewardCollected === 'function') {
+                onRewardCollected(coinReward);
+            }
+            pulseCoinCounter();
+        });
+    }
+
+    function hideProgressionOverlay(options = {}) {
+        const { collectPendingReward = false } = options;
         const modal = document.getElementById('progression-modal');
         const mask = document.getElementById('progression-mask');
         const banner = document.getElementById('progression-banner');
         const card = document.getElementById('progression-card');
         if (!modal || !card || !banner || !mask) return;
 
+        if (collectPendingReward) {
+            settlePendingProgressionReward({ animate: false });
+        }
+
         modal.classList.remove('opacity-100');
         modal.classList.add('opacity-0', 'pointer-events-none');
         mask.classList.remove('level-win-mask--show');
         banner.classList.remove('level-win-banner--show');
         card.classList.remove('level-win-card--show');
+        if (progressionRewardTimeout) {
+            window.clearTimeout(progressionRewardTimeout);
+            progressionRewardTimeout = null;
+        }
+        setProgressionOverlayButtonsEnabled(true);
         card.style.opacity = '';
         card.style.transform = '';
         setTimeout(() => {
@@ -264,7 +470,27 @@ export function createUiHelpers({
         }, 220);
     }
 
-    function showProgressionOverlay(solvedAnimals = []) {
+    function updateCoinCounterValue(value) {
+        const coinCounter = document.getElementById('coin-counter');
+        if (coinCounter) {
+            coinCounter.innerText = String(value);
+        }
+    }
+
+    function splitCoinGain(totalAmount, pieceCount) {
+        const safePieces = Math.max(1, Math.min(pieceCount, totalAmount));
+        const baseAmount = Math.floor(totalAmount / safePieces);
+        const remainder = totalAmount % safePieces;
+        const chunks = [];
+
+        for (let index = 0; index < safePieces; index++) {
+            chunks.push(baseAmount + (index < remainder ? 1 : 0));
+        }
+
+        return chunks;
+    }
+
+    function showProgressionOverlay(solvedAnimals = [], options = {}) {
         const modal = document.getElementById('progression-modal');
         const mask = document.getElementById('progression-mask');
         const banner = document.getElementById('progression-banner');
@@ -274,6 +500,7 @@ export function createUiHelpers({
         const ctaBtn = document.getElementById('progression-cta-btn');
         const menuBtn = document.getElementById('progression-menu-btn');
         if (!modal || !mask || !banner || !card || !title || !kicker || !ctaBtn || !menuBtn) return;
+        const { coinReward = 50, autoCollectReward = false, onRewardCollected = null } = options;
 
         const chestReady = state.chestProgress >= state.chestGoal;
         const displayedChestProgress = Math.min(state.chestProgress, state.chestGoal);
@@ -284,6 +511,11 @@ export function createUiHelpers({
         mask.classList.remove('level-win-mask--show');
         banner.classList.remove('level-win-banner--show');
         card.classList.remove('level-win-card--show');
+        if (progressionRewardTimeout) {
+            window.clearTimeout(progressionRewardTimeout);
+            progressionRewardTimeout = null;
+        }
+        setProgressionOverlayButtonsEnabled(true);
 
         renderProgressionAnimalStage(solvedAnimals);
 
@@ -322,6 +554,14 @@ export function createUiHelpers({
                 card.classList.add('level-win-card--show');
             }, 700);
         });
+
+        if (autoCollectReward && coinReward > 0) {
+            pendingProgressionReward = { coinReward, onRewardCollected };
+            progressionRewardTimeout = window.setTimeout(async () => {
+                progressionRewardTimeout = null;
+                settlePendingProgressionReward({ animate: true });
+            }, 1180);
+        }
     }
 
     function startChestSparkles() {
@@ -423,11 +663,10 @@ export function createUiHelpers({
         const difficultyIcon = document.getElementById('level-difficulty-icon');
         const timeIcon = document.getElementById('level-time-icon');
         const tempIcon = document.getElementById('level-temp-icon');
-        const animalTotal = document.getElementById('animal-total');
 
         if (coinCounter) coinCounter.innerText = String(state.coins);
         if (powerCounter) {
-            powerCounter.innerText = String(calculateTotalPower(state.animals, state.unlockedCompanionIds));
+            powerCounter.innerText = String(getZooPowerTotal());
         }
         if (mascot) mascot.innerHTML = getMascotArt();
 
@@ -449,9 +688,115 @@ export function createUiHelpers({
         if (tempIcon && activeLevelData.temp) {
             tempIcon.innerText = getTempIcon(activeLevelData.temp);
         }
-        if (animalTotal && activeLevelData.gridSize) {
-            animalTotal.innerText = String(activeLevelData.gridSize);
+
+        renderZooEarningsCard();
+    }
+
+    function pulseCoinCounter() {
+        const coinCounterWrap = document.getElementById('coin-counter')?.parentElement;
+        if (!coinCounterWrap) return;
+
+        coinCounterWrap.classList.remove('coin-counter-pop');
+        void coinCounterWrap.offsetWidth;
+        coinCounterWrap.classList.add('coin-counter-pop');
+    }
+
+    function animateCoinsToHud(coinAmount, options = {}) {
+        const gameView = document.getElementById('game-view');
+        const layer = document.getElementById('coin-burst-layer');
+        const sourceEl = options.sourceEl || document.getElementById('zoo-earnings-chest');
+        const targetEl = document.getElementById('coin-counter')?.parentElement;
+        const onCoinLand = typeof options.onCoinLand === 'function' ? options.onCoinLand : null;
+
+        if (coinAmount <= 0) {
+            return Promise.resolve();
         }
+
+        if (!gameView || !layer || !sourceEl || !targetEl) {
+            if (onCoinLand) {
+                onCoinLand(coinAmount, 0, 1);
+            }
+            return Promise.resolve();
+        }
+
+        layer.innerHTML = '';
+
+        const gameRect = gameView.getBoundingClientRect();
+        const sourceRect = sourceEl.getBoundingClientRect();
+        const targetRect = targetEl.getBoundingClientRect();
+        const sourceCenterX = sourceRect.left + (sourceRect.width / 2) - gameRect.left;
+        const sourceCenterY = sourceRect.top + (sourceRect.height / 2) - gameRect.top;
+        const targetCenterX = targetRect.left + (targetRect.width / 2) - gameRect.left;
+        const targetCenterY = targetRect.top + (targetRect.height / 2) - gameRect.top;
+        const totalCoins = Math.min(coinAmount, Math.min(18, Math.max(10, Math.round(Math.sqrt(coinAmount) * 2.2))));
+        const coinChunks = splitCoinGain(coinAmount, totalCoins);
+        const maxDelay = (totalCoins - 1) * 38;
+
+        for (let index = 0; index < totalCoins; index++) {
+            const coin = document.createElement('span');
+            const burstAngle = (-92 + (index * (184 / Math.max(totalCoins - 1, 1)))) * (Math.PI / 180);
+            const burstRadius = 26 + (Math.random() * 34);
+            const burstX = Math.cos(burstAngle) * burstRadius;
+            const burstY = Math.sin(burstAngle) * burstRadius - (8 + Math.random() * 16);
+            const targetX = targetCenterX - sourceCenterX + (-10 + Math.random() * 20);
+            const targetY = targetCenterY - sourceCenterY + (-8 + Math.random() * 16);
+
+            coin.className = 'coin-flyer';
+            coin.style.left = `${sourceCenterX}px`;
+            coin.style.top = `${sourceCenterY}px`;
+            coin.style.setProperty('--coin-delay', `${index * 38}ms`);
+            coin.style.setProperty('--coin-burst-x', `${burstX}px`);
+            coin.style.setProperty('--coin-burst-y', `${burstY}px`);
+            coin.style.setProperty('--coin-target-x', `${targetX}px`);
+            coin.style.setProperty('--coin-target-y', `${targetY}px`);
+            coin.style.setProperty('--coin-rotate-mid', `${90 + Math.random() * 180}deg`);
+            coin.style.setProperty('--coin-rotate-end', `${280 + Math.random() * 260}deg`);
+            coin.addEventListener('animationend', () => {
+                coin.remove();
+            }, { once: true });
+            layer.appendChild(coin);
+
+            if (onCoinLand) {
+                window.setTimeout(() => {
+                    onCoinLand(coinChunks[index], index, totalCoins);
+                }, (index * 38) + 760);
+            }
+        }
+
+        return new Promise(resolve => {
+            window.setTimeout(() => {
+                layer.innerHTML = '';
+                resolve();
+            }, 980 + maxDelay);
+        });
+    }
+
+    async function collectZooEarnings(coinAmount, afterCollect) {
+        if (coinAmount <= 0 || isZooEarningsCollecting) return;
+
+        isZooEarningsCollecting = true;
+        renderZooEarningsCard();
+
+        const startingCoins = state.coins;
+        let animatedCoins = 0;
+
+        await animateCoinsToHud(coinAmount, {
+            onCoinLand(chunkAmount) {
+                animatedCoins += chunkAmount;
+                state.coins = startingCoins + animatedCoins;
+                updateCoinCounterValue(state.coins);
+            }
+        });
+
+        state.coins = startingCoins + coinAmount;
+        updateCoinCounterValue(state.coins);
+        if (typeof afterCollect === 'function') {
+            await afterCollect();
+        }
+
+        pulseCoinCounter();
+        isZooEarningsCollecting = false;
+        renderZooEarningsCard();
     }
 
     function showFloatAlert(message) {
@@ -535,31 +880,12 @@ export function createUiHelpers({
         }
     }
 
-    function zooRoamerMarkup(animal) {
-        return `
-            <span class="zoo-roamer__sprite">${animalHeadMarkup(animal, 'animal-head--md')}</span>
-            <span class="zoo-roamer__level" aria-label="${animal.name} level ${animal.level}">${animal.level}</span>
-        `;
-    }
-
     function renderZooHabitat() {
-        const roamerLayer = document.getElementById('habitat-roamers');
         const cardGrid = document.getElementById('animal-card-grid');
-        if (!roamerLayer || !cardGrid) return;
+        if (!cardGrid) return;
 
-        roamerLayer.innerHTML = '';
         cardGrid.innerHTML = '';
-
-        const unlockedAnimals = state.animals.filter(animal => state.unlockedCompanionIds.includes(animal.id));
-
-        unlockedAnimals.forEach((animal, index) => {
-            const roamer = document.createElement('div');
-            roamer.className = `absolute zoo-roamer zoo-roamer--${index % 4}`;
-            roamer.style.left = `${10 + (index * 18)}px`;
-            roamer.style.top = `${12 + ((index % 3) * 24)}px`;
-            roamer.innerHTML = zooRoamerMarkup(animal);
-            roamerLayer.appendChild(roamer);
-        });
+        renderHabitatRoamers('habitat-roamers');
 
         state.animals.forEach(animal => {
             const isUnlocked = state.unlockedCompanionIds.includes(animal.id);
@@ -588,8 +914,12 @@ export function createUiHelpers({
                     ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
                     : 'bg-emerald-100/80 text-emerald-800 opacity-60';
                 const upgradeButtonIcon = canUpgrade ? '🔼' : '🔒';
+                const favoriteBadge = isFavorite
+                    ? '<div class="favorite-growl-badge favorite-growl-badge--card" aria-label="Favorite animal">⭐</div>'
+                    : '';
 
                 card.innerHTML = `
+                    ${favoriteBadge}
                     ${animal.id === upgradeTutorialAnimalId ? upgradeHand : ''}
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -645,6 +975,8 @@ export function createUiHelpers({
         populateSettingsLevelControls,
         renderChecklistHUD,
         renderHomeScreen,
+        collectZooEarnings,
+        getCurrentZooEarnings,
         renderProgressionAnimalStage,
         renderZooHabitat,
         setZooWelcomeVisibility,
@@ -658,6 +990,7 @@ export function createUiHelpers({
         toggleHowToPlay,
         toggleSettingsMenu,
         triggerConfetti,
+        pulseCoinCounter,
         updateCellVisual,
         updateHeaderLogoVisibility,
         updateHeartsUI,

@@ -285,6 +285,39 @@
             animation: jiggle 1.5s infinite ease-in-out;
         }
 
+        @keyframes chest-unlock-jiggle {
+            0%, 100% {
+                transform: rotate(0deg) translateY(0) scale(1);
+            }
+            8% {
+                transform: rotate(-3deg) translateY(-1px) scale(1.01);
+            }
+            14% {
+                transform: rotate(3deg) translateY(-1px) scale(1.01);
+            }
+            20% {
+                transform: rotate(-2deg) translateY(0) scale(1);
+            }
+            26%, 58% {
+                transform: rotate(0deg) translateY(0) scale(1);
+            }
+            66% {
+                transform: rotate(2.5deg) translateY(-1px) scale(1.01);
+            }
+            74% {
+                transform: rotate(-2.5deg) translateY(-1px) scale(1.01);
+            }
+            82% {
+                transform: rotate(1.5deg) translateY(0) scale(1);
+            }
+        }
+
+        .chest-unlock-hero {
+            animation: chest-unlock-jiggle 2.8s infinite ease-in-out;
+            transform-origin: center 78%;
+            will-change: transform;
+        }
+
         /* Floating Sparkles */
         @keyframes sparkle-float {
             0% { transform: translate(0, 0) scale(0); opacity: 0; }
@@ -335,39 +368,6 @@
         }
 
         /* Animal roaming animations */
-        @keyframes roam-1 {
-            0%, 100% { transform: translate(10px, 10px) scaleX(1); }
-            30% { transform: translate(120px, 40px) scaleX(1); }
-            50% { transform: translate(80px, 80px) scaleX(-1); }
-            75% { transform: translate(20px, 90px) scaleX(-1); }
-        }
-        @keyframes roam-2 {
-            0%, 100% { transform: translate(150px, 60px) scaleX(-1); }
-            25% { transform: translate(50px, 20px) scaleX(-1); }
-            60% { transform: translate(110px, 75px) scaleX(1); }
-            80% { transform: translate(170px, 15px) scaleX(1); }
-        }
-        @keyframes roam-3 {
-            0%, 100% { transform: translate(40px, 110px) scaleX(1); }
-            40% { transform: translate(130px, 100px) scaleX(-1); }
-            70% { transform: translate(90px, 30px) scaleX(1); }
-        }
-        @keyframes roam-4 {
-            0%, 100% { transform: translate(160px, 120px) scaleX(-1); }
-            35% { transform: translate(30px, 70px) scaleX(1); }
-            75% { transform: translate(110px, 120px) scaleX(-1); }
-        }
-
-        .roamer-0 { animation: roam-1 14s infinite ease-in-out; }
-        .roamer-1 { animation: roam-2 16s infinite ease-in-out; }
-        .roamer-2 { animation: roam-3 12s infinite ease-in-out; }
-        .roamer-3 { animation: roam-4 18s infinite ease-in-out; }
-
-        .home-roamer {
-            font-size: 1.75rem;
-            filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.18));
-        }
-
         @keyframes zoo-roam-1 {
             0%, 100% { transform: translate(10px, 10px); }
             30% { transform: translate(120px, 40px); }
@@ -405,9 +405,32 @@
         }
 
         .zoo-roamer__sprite {
+            position: relative;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .favorite-growl-badge.zoo-roamer__favorite {
+            left: 50%;
+            top: -1.05rem;
+            z-index: 3;
+            width: 0.7rem;
+            height: 0.7rem;
+            margin-left: -0.35rem;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            font-size: 0.7rem;
+            line-height: 0.7rem;
+            color: #facc15;
+            transform: none;
+            animation: none;
+            box-shadow: none;
+            text-shadow:
+                0 1px 0 rgba(255, 248, 220, 0.9),
+                0 2px 6px rgba(180, 83, 9, 0.35);
         }
 
         .zoo-roamer__level {
@@ -433,6 +456,177 @@
         .zoo-roamer--1 { animation: zoo-roam-2 16s infinite ease-in-out; }
         .zoo-roamer--2 { animation: zoo-roam-3 12s infinite ease-in-out; }
         .zoo-roamer--3 { animation: zoo-roam-4 18s infinite ease-in-out; }
+
+        .home-zoo-card {
+            display: flex;
+            flex-direction: column;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(244, 255, 248, 0.98) 100%);
+            box-shadow:
+                0 14px 30px rgba(16, 185, 129, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.86);
+        }
+
+        #home-zoo-preview::after {
+            content: "";
+            position: absolute;
+            inset: auto 0 0;
+            height: 6.2rem;
+            background:
+                linear-gradient(180deg, rgba(16, 185, 129, 0) 0%, rgba(10, 132, 88, 0.18) 100%);
+            pointer-events: none;
+        }
+
+        #home-habitat-roamers {
+            inset: 0 0 5.25rem 0;
+        }
+
+        .zoo-earnings-card {
+            position: relative;
+            padding: 0.5rem 0.78rem;
+            background:
+                radial-gradient(circle at 88% 50%, rgba(251, 191, 36, 0.18) 0%, rgba(251, 191, 36, 0) 40%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(242, 255, 247, 0.98) 100%);
+            border-color: rgba(134, 239, 172, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow:
+                0 14px 22px rgba(16, 185, 129, 0.16),
+                inset 0 1px 0 rgba(255, 255, 255, 0.88);
+        }
+
+        .zoo-earnings-card__amount {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-width: 3.25rem;
+            padding: 0.28rem 0.62rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(209, 250, 229, 0.98);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.1);
+            color: #0f172a;
+            font-size: 0.8rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .zoo-earnings-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 55%);
+        }
+
+        .zoo-earnings-card__glow {
+            position: absolute;
+            inset: 50%;
+            width: 2.8rem;
+            height: 2.8rem;
+            transform: translate(-50%, -50%);
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.45) 0%, rgba(251, 191, 36, 0) 70%);
+            opacity: 0;
+            transition: opacity 180ms ease;
+            pointer-events: none;
+        }
+
+        .zoo-earnings-card--ready {
+            border-color: #facc15;
+            box-shadow:
+                0 14px 22px rgba(16, 185, 129, 0.18),
+                0 0 0 1px rgba(250, 204, 21, 0.28);
+        }
+
+        .zoo-earnings-card--ready .zoo-earnings-card__glow {
+            opacity: 1;
+            animation: zoo-earnings-glow 1.4s infinite ease-in-out;
+        }
+
+        .zoo-earnings-card--empty {
+            opacity: 0.9;
+        }
+
+        .zoo-earnings-card--empty .zoo-earnings-card__amount {
+            color: #64748b;
+            box-shadow: 0 6px 14px rgba(148, 163, 184, 0.08);
+        }
+
+        .zoo-earnings-card--empty #zoo-earnings-chest {
+            filter: saturate(0.9) brightness(0.98) drop-shadow(0 12px 16px rgba(120, 53, 15, 0.18));
+        }
+
+        .zoo-earnings-card--collecting {
+            pointer-events: none;
+        }
+
+        @keyframes zoo-earnings-glow {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(0.92);
+                opacity: 0.68;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.12);
+                opacity: 1;
+            }
+        }
+
+        .coin-flyer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1.65rem;
+            height: 1.65rem;
+            background-image: url('../../assets/coin-icon.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            filter: drop-shadow(0 5px 10px rgba(120, 74, 3, 0.34));
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            animation: coin-fly-to-hud 920ms cubic-bezier(0.18, 0.82, 0.22, 1) forwards;
+            animation-delay: var(--coin-delay, 0ms);
+            will-change: transform, opacity;
+        }
+
+        @keyframes coin-fly-to-hud {
+            0% {
+                transform: translate(-50%, -50%) translate(0, 0) scale(0.3) rotate(0deg);
+                opacity: 0;
+            }
+            12% {
+                opacity: 1;
+            }
+            34% {
+                transform: translate(-50%, -50%) translate(var(--coin-burst-x, 0px), var(--coin-burst-y, -36px)) scale(1.05) rotate(var(--coin-rotate-mid, 120deg));
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) translate(var(--coin-target-x, 0px), var(--coin-target-y, -120px)) scale(0.42) rotate(var(--coin-rotate-end, 360deg));
+                opacity: 0;
+            }
+        }
+
+        .coin-counter-pop {
+            animation: coin-counter-pop 420ms cubic-bezier(0.2, 0.9, 0.24, 1.1);
+        }
+
+        @keyframes coin-counter-pop {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(250, 204, 21, 0);
+            }
+            45% {
+                transform: scale(1.12);
+                box-shadow: 0 0 0 8px rgba(250, 204, 21, 0.16);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(250, 204, 21, 0);
+            }
+        }
 
         .nav-tab-label {
             font-size: 0.66rem;
@@ -504,6 +698,46 @@
             animation: zoo-badge-growl 1.2s infinite ease-in-out;
         }
 
+        .favorite-growl-badge {
+            position: absolute;
+            left: 50%;
+            top: -0.75rem;
+            z-index: 2;
+            display: inline-flex;
+            width: 2rem;
+            height: 2rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            border: 2px solid rgba(255, 248, 220, 0.98);
+            background: linear-gradient(180deg, #facc15 0%, #f59e0b 100%);
+            box-shadow:
+                0 10px 18px rgba(217, 119, 6, 0.24),
+                inset 0 1px 0 rgba(255, 255, 255, 0.72);
+            color: #7c2d12;
+            font-size: 1rem;
+            line-height: 1;
+            transform: translateX(-50%);
+            animation: zoo-badge-growl 1.2s infinite ease-in-out;
+        }
+
+        .favorite-growl-badge--card {
+            animation: none;
+        }
+
+        .treasure-capsule-button {
+            border: 1px solid rgba(16, 185, 129, 0.26);
+            background: linear-gradient(180deg, rgba(248,255,244,0.94) 0%, rgba(237,250,229,0.9) 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.86),
+                0 10px 18px rgba(15, 23, 42, 0.08);
+            color: rgba(6, 78, 59, 0.92);
+        }
+
+        .treasure-capsule-button:hover {
+            background: linear-gradient(180deg, rgba(252,255,248,0.98) 0%, rgba(241,252,234,0.96) 100%);
+        }
+
         /* Pointing hand indicator repeat pulse */
         @keyframes pointer-slide {
             0%, 100% { transform: translateY(0); }
@@ -560,50 +794,136 @@
             animation: vignette-warning 2s infinite ease-in-out;
         }
 
-        #game-view.hard-mode {
-            background: linear-gradient(180deg, #252b3a 0%, #1a2030 100%);
+        #view-puzzle.hard-mode {
+            --hard-bg-top: #b30444;
+            --hard-bg-bottom: #960239;
+            --hard-panel-bg: rgba(196, 30, 92, 0.7);
+            --hard-panel-border: rgba(255, 205, 222, 0.4);
+            --hard-control-bg: rgba(212, 58, 117, 0.78);
+            --hard-grid-bg: rgba(230, 112, 159, 0.28);
+            background: linear-gradient(180deg, var(--hard-bg-top) 0%, var(--hard-bg-bottom) 100%);
         }
 
-        #game-view.hard-mode #view-puzzle {
+        #view-puzzle.hard-mode.hard-mode--hard {
+            --hard-bg-top: #b70646;
+            --hard-bg-bottom: #9b043b;
+            --hard-panel-bg: rgba(200, 34, 96, 0.7);
+            --hard-control-bg: rgba(216, 62, 121, 0.78);
+            --hard-grid-bg: rgba(233, 118, 164, 0.26);
+        }
+
+        #view-puzzle.hard-mode.hard-mode--very-hard {
+            --hard-bg-top: #ab0141;
+            --hard-bg-bottom: #8d0135;
+            --hard-panel-bg: rgba(188, 24, 86, 0.72);
+            --hard-control-bg: rgba(205, 52, 111, 0.8);
+            --hard-grid-bg: rgba(224, 102, 150, 0.24);
+        }
+
+        #view-puzzle.hard-mode {
             color: #f8fafc;
         }
 
-        #game-view.hard-mode .bg-white\/90,
-        #game-view.hard-mode .bg-white\/80,
-        #game-view.hard-mode .bg-white\/50,
-        #game-view.hard-mode .bg-emerald-50,
-        #game-view.hard-mode .bg-emerald-100\/50 {
-            background: rgba(34, 42, 60, 0.9) !important;
-            border-color: rgba(248, 113, 113, 0.22) !important;
+        #view-puzzle.hard-mode .bg-white\/90,
+        #view-puzzle.hard-mode .bg-white\/80,
+        #view-puzzle.hard-mode .bg-white\/50,
+        #view-puzzle.hard-mode .bg-emerald-50,
+        #view-puzzle.hard-mode .bg-emerald-100\/50 {
+            background: var(--hard-panel-bg) !important;
+            border-color: var(--hard-panel-border) !important;
             color: #e5e7eb !important;
         }
 
-        #game-view.hard-mode .text-slate-700,
-        #game-view.hard-mode .text-slate-600,
-        #game-view.hard-mode .text-slate-500,
-        #game-view.hard-mode .text-slate-400 {
+        #view-puzzle.hard-mode .text-slate-700,
+        #view-puzzle.hard-mode .text-slate-600,
+        #view-puzzle.hard-mode .text-slate-500,
+        #view-puzzle.hard-mode .text-slate-400 {
             color: #d1d5db !important;
         }
 
-        #game-view.hard-mode .text-emerald-500,
-        #game-view.hard-mode .text-emerald-600,
-        #game-view.hard-mode .text-emerald-700,
-        #game-view.hard-mode .text-emerald-800 {
+        #view-puzzle.hard-mode .text-emerald-500,
+        #view-puzzle.hard-mode .text-emerald-600,
+        #view-puzzle.hard-mode .text-emerald-700,
+        #view-puzzle.hard-mode .text-emerald-800 {
             color: #fca5a5 !important;
         }
 
-        #game-view.hard-mode .level-chip,
-        #game-view.hard-mode .level-icon-button,
-        #game-view.hard-mode #hunt-target-checklist > div,
-        #game-view.hard-mode #hunt-target-checklist > button {
-            background: rgba(56, 65, 92, 0.94) !important;
+        #view-puzzle.hard-mode .level-chip,
+        #view-puzzle.hard-mode .level-icon-button,
+        #view-puzzle.hard-mode #hunt-target-checklist > div,
+        #view-puzzle.hard-mode #hunt-target-checklist > button {
+            background: var(--hard-control-bg) !important;
             border-color: rgba(248, 113, 113, 0.25) !important;
             color: #f3f4f6 !important;
         }
 
-        #game-view.hard-mode #grid-container {
-            background: rgba(15, 23, 42, 0.72) !important;
+        #view-puzzle.hard-mode #grid-container {
+            background: var(--hard-grid-bg) !important;
             box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.12), inset 0 10px 30px rgba(0, 0, 0, 0.18);
+        }
+
+        #view-puzzle.hard-mode #global-settings-btn,
+        #view-puzzle.hard-mode #zoo-power-hud {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-color: #d1fae5 !important;
+            color: #475569 !important;
+        }
+
+        #view-puzzle.hard-mode #global-settings-btn:hover {
+            background: #ecfdf5 !important;
+        }
+
+        #view-puzzle.hard-mode #zoo-power-hud #power-counter {
+            color: #059669 !important;
+        }
+
+        .checklist-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.38rem 0.78rem 0.42rem;
+            border-radius: 0.95rem 0.95rem 1.1rem 1.1rem;
+            border: 1px solid #d1fae5;
+            border-top: 0;
+            background: #ffffff;
+            color: #334155;
+            font-size: 0.75rem;
+            font-weight: 700;
+            line-height: 1;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+            transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+        }
+
+        .checklist-chip__value {
+            white-space: nowrap;
+        }
+
+        .checklist-chip--pending {
+            background: #ffffff;
+            border-color: #d1fae5;
+            color: #334155;
+        }
+
+        .checklist-chip--complete {
+            background: #10b981;
+            border-color: #059669;
+            color: #ffffff;
+        }
+
+        .checklist-chip--total {
+            background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+            border-color: #86efac;
+            color: #047857;
+            min-width: 3.75rem;
+            justify-content: center;
+            box-shadow: 0 10px 18px rgba(16, 185, 129, 0.16);
+        }
+
+        #view-puzzle.hard-mode .checklist-chip--total {
+            background: linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%) !important;
+            border-color: rgba(110, 231, 183, 0.9) !important;
+            color: #065f46 !important;
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.22);
         }
 
         @keyframes fierce-warning-in {
@@ -755,9 +1075,19 @@
             padding: 0.7rem;
             border-radius: 1.7rem;
             background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,250,235,0.92) 100%);
+            min-width: 5.4rem;
+            min-height: 5.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             box-shadow:
                 0 18px 34px rgba(0, 0, 0, 0.38),
                 inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+
+        .level-win-animal__favorite {
+            top: -0.82rem;
+            z-index: 3;
         }
 
         .level-win-animal__badge {
